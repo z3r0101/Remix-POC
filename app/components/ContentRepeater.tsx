@@ -208,10 +208,32 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
           state.current.polygon = L.polygon(state.current.points, { color: "red" }).addTo(mapRef.current);
       
           if (debug) console.log("Polygon Points:", state.current.points);
-      
         } else if (state.current.mode === "drawLines") {
           // Handle draw-lines mode
+      
+          // Clear all markers if there are no points
+          if (state.current.points.length === 0) {
+            if (state.current.startMarker) {
+              mapRef.current.removeLayer(state.current.startMarker);
+              state.current.startMarker = null;
+            }
+      
+            if (state.current.polyline) {
+              mapRef.current.removeLayer(state.current.polyline);
+              state.current.polyline = null;
+            }
+          }
+      
           const newPoint = [latLng.lat, latLng.lng];
+      
+          if (state.current.points.length === 0) {
+            // First point - add a marker to indicate the starting point
+            state.current.startMarker = L.circleMarker(newPoint, {
+              color: "blue",
+              radius: 1, // Adjust the radius for better visibility
+            }).addTo(mapRef.current);
+          }
+      
           let isCollision = false;
           let isConnected = false;
       
@@ -226,7 +248,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                   newPoint
                 )
               ) {
-                isCollision = true;
+                //isCollision = true;
                 break;
               }
             }
@@ -254,7 +276,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
             closePolygon();
           }
         }
-      });
+      });            
 
       if (debug) console.log(initialData);
 
@@ -386,6 +408,11 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     }
     if (state.current.polyline) {
       mapRef.current.removeLayer(state.current.polyline);
+    }
+    // Remove the starting marker if it exists
+    if (state.current.startMarker) {
+      mapRef.current.removeLayer(state.current.startMarker);
+      state.current.startMarker = null; // Reset the marker reference
     }
     state.current.polygon = null;
     state.current.polyline = null;
