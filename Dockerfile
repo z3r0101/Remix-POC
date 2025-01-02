@@ -17,8 +17,6 @@ COPY package.json ./
 # Copy specific folders and files from the host to the container
 COPY ./app ./app
 COPY ./public ./public
-# COPY ./tsconfig.json ./
-# COPY ./remix.config.ts ./
 COPY ./vite.config.ts ./
 COPY ./drizzle.config.ts ./
 

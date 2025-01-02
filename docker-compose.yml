@@ -9,9 +9,7 @@ services:
       - "3000:3000"
     volumes:
       - ./app:/app/app
-      #- ./public:/app/public
-      #- ./remix.config.ts:/app/remix.config.ts
-      #- ./tsconfig.json:/app/tsconfig.json
+      - ./public/uploads:/app/public/uploads
       - /app/node_modules
     environment:
       NODE_ENV: development
