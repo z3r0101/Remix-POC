@@ -892,7 +892,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                                 border: '1px solid #cccccc',
                                 borderRadius: '6px',
                                 color: '#999',
-                                minHeight: '3rem',
+                                minHeight: '3.5rem',
                                 overflow: 'hidden',
                                 cursor: "pointer",
                               }}
@@ -910,7 +910,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                                   alignItems: "center",   // Vertically center items
                                   justifyContent: "center", // Optional: Center items horizontally
                                   backgroundColor: "#cccccc",
-                                  ...(value ? { position: "absolute", top: "-2px", right: "-2px" } : {})
+                                  position: "absolute", top: "-2px", right: "-2px"
                                 }}
                                 onClick={() => {
                                   setIsDialogMapOpen(true);
