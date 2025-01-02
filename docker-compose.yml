@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  remix-poc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./app:/app/app
+      #- ./public:/app/public
+      #- ./remix.config.ts:/app/remix.config.ts
+      #- ./tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      SESSION_SECRET: 8d7sf9c8vsc89sdf8df8dsf79
+    env_file:
+      - .env
+    command: npm run dev
+
+  postgres:
+    image: postgres:16
+    container_name: remix-poc-postgres-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: q1w2e3r4t5y6u7i8o9p0
+      POSTGRES_DB: projectdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data  # Mount local directory to container

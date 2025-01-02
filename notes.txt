@@ -1,0 +1,24 @@
+
+npm install react-dropzone multer
+
+npm install @azure/msal-browser
+npm install @azure/msal-node
+
+
+npm install node-fetch
+npm install jwks-rsa
+
+npm install drizzle-orm postgres drizzle-kit
+
+npm run drizzle:update
+
+#Drizzle migration
+#Regenerate migrations
+
+
+npx drizzle-kit push        #Directly applies schema changes to the database | Don't create migration files | Apply changes to DB
+npx drizzle-kit generate    #Generates SQL migration files based on schema | Create migration files | No changes to DB
+npm run drizzle:update      #Runs your custom script (e.g., generate) | No changes to DB
+
+
+npm install @remix-run/dev vite-tsconfig-paths
