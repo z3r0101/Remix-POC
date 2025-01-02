@@ -184,6 +184,8 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   const initializeMap = (initialData) => {
     if (!mapRef.current && window.L) {
       // Initialize the map
+      console.log(`${id}_mapper_modeSelect`);
+
       mapRef.current = L.map(`${id}_mapper_container`).setView([43.833, 87.616], 2); // Urumqi center
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
@@ -310,6 +312,8 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
 
       //Removing Ukrainian Flag
       document.querySelector('.leaflet-control-attribution.leaflet-control a')?.remove();
+
+      document.getElementById(`${id}_mapper_modeSelect`).selectedIndex = 0;
 
       if (debug) console.log("Map initialized");
     }
