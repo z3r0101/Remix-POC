@@ -671,7 +671,8 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
         }}
       >
         <div className="dts-dialog__content">
-          <div className="dts-dialog__header">
+          <div className="dts-dialog__header" style={{justifyContent: "space-between"}}>
+            <h2 className="dts-heading-2" style={{marginBottom: "0px"}}>Mapper</h2>
             <a type="button" aria-label="Close dialog" onClick={closeMapDialog} style={{ color: "#000" }}>
               <svg aria-hidden="true" focusable="false" role="img">
                 <use href={`${base_path}/assets/icons/close.svg#close`}></use>
@@ -679,9 +680,6 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
             </a>
           </div>
           <div>
-            <div className="dts-form__intro">
-              <h2 className="dts-heading-2">Mapper</h2>
-            </div>
             <div className="dts-form__body">
               <div className="mapper-menu" style={{display: "flex", justifyContent: "space-between", padding: "10px", background: "#777"}}>
                 <input type="text" id={`${id}_mapper_search`} style={{flex: 1, marginRight: "10px"}} 
