@@ -670,7 +670,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
           maxHeight: "none !important",
         }}
       >
-        <div className="dts-dialog__content">
+        <div className="dts-dialog__content" style={{overflowY: "hidden"}}>
           <div className="dts-dialog__header" style={{justifyContent: "space-between"}}>
             <h2 className="dts-heading-2" style={{marginBottom: "0px"}}>Mapper</h2>
             <a type="button" aria-label="Close dialog" onClick={closeMapDialog} style={{ color: "#000" }}>
