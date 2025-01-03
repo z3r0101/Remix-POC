@@ -191,8 +191,26 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
         attribution: "© OpenStreetMap contributors",
       }).addTo(mapRef.current);
 
+      let isDragging = false;
+
+      mapRef.current.on("mousedown", (e) => {
+        isDragging = true; // Set dragging state to true
+      
+        // Update cursor to indicate dragging
+        mapRef.current.getContainer().style.cursor = "grabbing";
+      });
+      
+      mapRef.current.on("mouseup", (e) => {
+        isDragging = false; // Reset dragging state
+      
+        // Reset cursor based on the mode
+        mapRef.current.getContainer().style.cursor =
+          state.current.mode === "moveMap" ? "grab" : "crosshair";
+      }); 
+
       // Attach a click event to the map
       mapRef.current.on("click", (e) => {
+
         const latLng = e.latlng; // Get clicked coordinates
       
         if (state.current.mode === "autoPolygon") {
@@ -763,10 +781,10 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                   if (mapRef?.current) {
                     const container = mapRef.current.getContainer();
                     if (newMode === "moveMap") {
-                      mapRef.current.dragging.enable(); // Enable dragging
+                      //mapRef.current.dragging.enable(); // Enable dragging
                       container.style.cursor = ""; // Reset to default cursor (grab hand for Leaflet)
                     } else {
-                      mapRef.current.dragging.disable(); // Disable dragging
+                      //mapRef.current.dragging.disable(); // Disable dragging
                       container.style.cursor = "crosshair"; // Crosshair cursor for drawing modes
                     }
                   }
