@@ -726,46 +726,58 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                   }
                 }}
                 placeholder="Type location and enter" />
-<select
-  id={`${id}_mapper_modeSelect`}
-  style={{ width: "20%", marginRight: "10px" }}
-  onChange={(e) => {
-    const newMode = e.target.value;
-    const newModeText = e.target.options[e.target.selectedIndex].text; // Get the text of the selected option
-    const lastMode = e.target.getAttribute("last_mode") || "moveMap"; // Default last_mode to "moveMap" initially
-    const lastModeText = [...e.target.options].find(
-      (option) => option.value === lastMode
-    )?.text || lastMode; // Get the text of the last_mode option
+              <select
+                id={`${id}_mapper_modeSelect`}
+                style={{ width: "20%", marginRight: "10px" }}
+                onChange={(e) => {
+                  const newMode = e.target.value;
+                  const newModeText = e.target.options[e.target.selectedIndex].text; // Get the text of the selected option
+                  const lastMode = e.target.getAttribute("last_mode") || "moveMap"; // Default last_mode to "moveMap" initially
+                  const lastModeText = [...e.target.options].find(
+                    (option) => option.value === lastMode
+                  )?.text || lastMode; // Get the text of the last_mode option
 
-    // Check if there are points in the drawing
-    const hasDrawing = state.current.points.length > 0;
+                  // Check if there are points in the drawing
+                  const hasDrawing = state.current.points.length > 0;
 
-    // Ensure confirmation is prompted only for valid transitions
-    if (hasDrawing && newMode !== "moveMap" && lastMode !== "moveMap" && lastMode !== newMode) {
-      const confirmMessage = `Switching from "${lastModeText}" to "${newModeText}" will clear the current drawing. Do you want to proceed?`;
-      if (!window.confirm(confirmMessage)) {
-        e.target.value = lastMode; // Revert to the previous mode
-        return;
-      }
+                  // Ensure confirmation is prompted only for valid transitions
+                  if (hasDrawing && newMode !== "moveMap" && lastMode !== "moveMap" && lastMode !== newMode) {
+                    const confirmMessage = `Switching from "${lastModeText}" to "${newModeText}" will clear the current drawing. Do you want to proceed?`;
+                    if (!window.confirm(confirmMessage)) {
+                      e.target.value = lastMode; // Revert to the previous mode
+                      return;
+                    }
 
-      resetDrawing(); // Reset the map only if confirmed
-    }
+                    resetDrawing(); // Reset the map only if confirmed
+                  }
 
-    // Update the last_mode attribute only if newMode is not "moveMap"
-    if (newMode !== "moveMap") {
-      e.target.setAttribute("last_mode", newMode);
-    }
+                  // Update the last_mode attribute only if newMode is not "moveMap"
+                  if (newMode !== "moveMap") {
+                    e.target.setAttribute("last_mode", newMode);
+                  }
 
-    // Update the state with the new mode
-    state.current.mode = newMode;
+                  // Update the state with the new mode
+                  state.current.mode = newMode;
 
-    if (debug) console.log("Mode changed to:", state.current.mode);
-  }}
->
-  <option value="moveMap">Move Map</option>
-  <option value="autoPolygon">Auto Polygon</option>
-  <option value="drawLines">Draw Lines</option>
-</select>
+                  // Update map interaction behavior and cursor style dynamically
+                  if (mapRef?.current) {
+                    const container = mapRef.current.getContainer();
+                    if (newMode === "moveMap") {
+                      mapRef.current.dragging.enable(); // Enable dragging
+                      container.style.cursor = ""; // Reset to default cursor (grab hand for Leaflet)
+                    } else {
+                      mapRef.current.dragging.disable(); // Disable dragging
+                      container.style.cursor = "crosshair"; // Crosshair cursor for drawing modes
+                    }
+                  }
+
+                  if (debug) console.log("Mode changed to:", state.current.mode);
+                }}
+              >
+                <option value="moveMap">Move Map</option>
+                <option value="autoPolygon">Auto Polygon</option>
+                <option value="drawLines">Draw Lines</option>
+              </select>
               <div id={`${id}_mapper_buttons`} style={{display: "flex", gap: "10px"}}>
                   <button type="button" id={`${id}_mapper_clearCoords`} 
                   className="mg-button mg-button--small mg-button-system" style={{fontSize: "1.2rem", padding: "0.4rem 1.1rem"}}
