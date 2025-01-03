@@ -726,41 +726,44 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                   }
                 }}
                 placeholder="Type location and enter" />
-              <select
-                id={`${id}_mapper_modeSelect`}
-                style={{ width: "20%", marginRight: "10px" }}
-                onChange={(e) => {
-                  const newMode = e.target.value;
-                  const newModeText = e.target.options[e.target.selectedIndex].text; // Get the text of the selected option
-                  const lastMode = e.target.getAttribute("last_mode") || "moveMap"; // Default last_mode to "moveMap" initially
-                  const lastModeText = [...e.target.options].find(
-                    (option) => option.value === lastMode
-                  )?.text || lastMode; // Get the text of the last_mode option
+<select
+  id={`${id}_mapper_modeSelect`}
+  style={{ width: "20%", marginRight: "10px" }}
+  onChange={(e) => {
+    const newMode = e.target.value;
+    const newModeText = e.target.options[e.target.selectedIndex].text; // Get the text of the selected option
+    const lastMode = e.target.getAttribute("last_mode") || "moveMap"; // Default last_mode to "moveMap" initially
+    const lastModeText = [...e.target.options].find(
+      (option) => option.value === lastMode
+    )?.text || lastMode; // Get the text of the last_mode option
 
-                  // Check if the mode is changing between "Auto Polygon" and "Draw Lines"
-                  if (newMode !== "moveMap" && lastMode !== "moveMap" && lastMode !== newMode) {
-                    const confirmMessage = `Switching from "${lastModeText}" to "${newModeText}" will clear the current drawing. Do you want to proceed?`;
-                    if (!window.confirm(confirmMessage)) {
-                      e.target.value = lastMode; // Revert to the previous mode
-                      return;
-                    }
+    // Ensure confirmation is prompted only for valid transitions
+    if (newMode !== "moveMap" && lastMode !== "moveMap" && lastMode !== newMode) {
+      const confirmMessage = `Switching from "${lastModeText}" to "${newModeText}" will clear the current drawing. Do you want to proceed?`;
+      if (!window.confirm(confirmMessage)) {
+        e.target.value = lastMode; // Revert to the previous mode
+        return;
+      }
 
-                    resetDrawing(); // Reset the map only if confirmed
-                  }
+      resetDrawing(); // Reset the map only if confirmed
+    }
 
-                  // Update the last_mode attribute
-                  e.target.setAttribute("last_mode", newMode);
+    // Update the last_mode attribute only if newMode is not "moveMap"
+    if (newMode !== "moveMap") {
+      e.target.setAttribute("last_mode", newMode);
+    }
 
-                  // Update the state with the new mode
-                  state.current.mode = newMode;
+    // Update the state with the new mode
+    state.current.mode = newMode;
 
-                  if (debug) console.log("Mode changed to:", state.current.mode);
-                }}
-              >
-                <option value="moveMap">Move Map</option>
-                <option value="autoPolygon">Auto Polygon</option>
-                <option value="drawLines">Draw Lines</option>
-              </select>
+    if (debug) console.log("Mode changed to:", state.current.mode);
+  }}
+>
+  <option value="moveMap">Move Map</option>
+  <option value="autoPolygon">Auto Polygon</option>
+  <option value="drawLines">Draw Lines</option>
+</select>
+
               <div id={`${id}_mapper_buttons`} style={{display: "flex", gap: "10px"}}>
                   <button type="button" id={`${id}_mapper_clearCoords`} 
                   className="mg-button mg-button--small mg-button-system" style={{fontSize: "1.2rem", padding: "0.4rem 1.1rem"}}
@@ -771,6 +774,9 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                   <button type="button" id={`${id}_mapper_undoAction`} 
                   className="mg-button mg-button--small mg-button-system" style={{fontSize: "1.2rem", padding: "0.4rem 1.1rem"}}
                   onClick={(e) => {
+                    const mapperModeSelect = document.getElementById(`${id}_mapper_modeSelect`);
+                    const currentMode = mapperModeSelect.getAttribute('last_mode') || "moveMap"; // Fallback to "moveMap" if undefined
+
                     if (state.current.points.length > 0) {
                         if (state.current.wasPolygonized) {
                             if (state.current.polygon) mapRef.current.removeLayer(state.current.polygon);
@@ -780,12 +786,12 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                         } else {
                           state.current.points.pop();
 
-                          if (state.current.mode === "autoPolygon") {
+                          if (currentMode === "autoPolygon") {
                               if (state.current.polygon) mapRef.current.removeLayer(state.current.polygon);
                               if (state.current.points.length > 0) {
                                 state.current.polygon = L.polygon(state.current.points, { color: 'red' }).addTo(mapRef.current);
                               }
-                          } else if (state.current.mode === "drawLines") {
+                          } else if (currentMode === "drawLines") { //state.current.mode
                               if (state.current.polyline) mapRef.current.removeLayer(state.current.polyline);
                               if (state.current.points.length > 0) {
                                 state.current.polyline = L.polyline(state.current.points, { color: 'blue' }).addTo(mapRef.current);
