@@ -175,7 +175,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   const dialogMapRef = useRef<HTMLDialogElement>(null);
   const mapRef = useRef(null);
   const state = useRef({
-    mode: "autoPolygon",
+    mode: "moveMap",
     polygon: null,
     polyline: null,
     points: [],
@@ -184,7 +184,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   const initializeMap = (initialData) => {
     if (!mapRef.current && window.L) {
       // Initialize the map
-      console.log(`${id}_mapper_modeSelect`);
+      if (debug) console.log(`${id}_mapper_modeSelect`);
 
       mapRef.current = L.map(`${id}_mapper_container`).setView([43.833, 87.616], 2); // Urumqi center
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -730,11 +730,34 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                 id={`${id}_mapper_modeSelect`}
                 style={{ width: "20%", marginRight: "10px" }}
                 onChange={(e) => {
-                  resetDrawing();
-                  state.current.mode = e.target.value; // Update the mode in state.current
+                  const newMode = e.target.value;
+                  const newModeText = e.target.options[e.target.selectedIndex].text; // Get the text of the selected option
+                  const lastMode = e.target.getAttribute("last_mode") || "moveMap"; // Default last_mode to "moveMap" initially
+                  const lastModeText = [...e.target.options].find(
+                    (option) => option.value === lastMode
+                  )?.text || lastMode; // Get the text of the last_mode option
+
+                  // Check if the mode is changing between "Auto Polygon" and "Draw Lines"
+                  if (newMode !== "moveMap" && lastMode !== "moveMap" && lastMode !== newMode) {
+                    const confirmMessage = `Switching from "${lastModeText}" to "${newModeText}" will clear the current drawing. Do you want to proceed?`;
+                    if (!window.confirm(confirmMessage)) {
+                      e.target.value = lastMode; // Revert to the previous mode
+                      return;
+                    }
+
+                    resetDrawing(); // Reset the map only if confirmed
+                  }
+
+                  // Update the last_mode attribute
+                  e.target.setAttribute("last_mode", newMode);
+
+                  // Update the state with the new mode
+                  state.current.mode = newMode;
+
                   if (debug) console.log("Mode changed to:", state.current.mode);
                 }}
               >
+                <option value="moveMap">Move Map</option>
                 <option value="autoPolygon">Auto Polygon</option>
                 <option value="drawLines">Draw Lines</option>
               </select>
