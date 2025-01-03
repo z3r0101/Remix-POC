@@ -737,8 +737,11 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
       (option) => option.value === lastMode
     )?.text || lastMode; // Get the text of the last_mode option
 
+    // Check if there are points in the drawing
+    const hasDrawing = state.current.points.length > 0;
+
     // Ensure confirmation is prompted only for valid transitions
-    if (newMode !== "moveMap" && lastMode !== "moveMap" && lastMode !== newMode) {
+    if (hasDrawing && newMode !== "moveMap" && lastMode !== "moveMap" && lastMode !== newMode) {
       const confirmMessage = `Switching from "${lastModeText}" to "${newModeText}" will clear the current drawing. Do you want to proceed?`;
       if (!window.confirm(confirmMessage)) {
         e.target.value = lastMode; // Revert to the previous mode
@@ -763,7 +766,6 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   <option value="autoPolygon">Auto Polygon</option>
   <option value="drawLines">Draw Lines</option>
 </select>
-
               <div id={`${id}_mapper_buttons`} style={{display: "flex", gap: "10px"}}>
                   <button type="button" id={`${id}_mapper_clearCoords`} 
                   className="mg-button mg-button--small mg-button-system" style={{fontSize: "1.2rem", padding: "0.4rem 1.1rem"}}
