@@ -351,7 +351,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
       mapRef.current.off("click");
       mapRef.current.remove();
       mapRef.current = null;
-      state.current.mode = "autoPolygon";
+      state.current.mode = "moveMap";
       state.current.polygon = null;
       state.current.polyline = null;
       state.current.points = [];
