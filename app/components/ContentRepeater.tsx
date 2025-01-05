@@ -851,34 +851,36 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                   
                     let updatedValue = "";
                   
+                    const normalizeLongitude = (lng) => ((lng + 180) % 360 + 360) % 360 - 180; // Normalize to [-180, 180]
+                  
                     if (state.current.polygon) {
-                      // Convert polygon LatLng objects to plain arrays
+                      // Convert polygon LatLng objects to plain arrays and normalize
                       const polygonCoordinates = state.current.polygon
                         .getLatLngs()[0] // Leaflet polygons are arrays of arrays
-                        .map((latLng) => [latLng.lat, latLng.lng]);
-                    
-                        if (debug) console.log("Polygon Coordinates:", JSON.stringify(polygonCoordinates));
+                        .map((latLng) => [latLng.lat, normalizeLongitude(latLng.lng)]);
+                  
+                      if (debug) console.log("Polygon Coordinates (Normalized):", JSON.stringify(polygonCoordinates));
                       updatedValue = JSON.stringify(polygonCoordinates); // Save as JSON array
                     } else if (state.current.polyline) {
-                      // Convert polyline LatLng objects to plain arrays
+                      // Convert polyline LatLng objects to plain arrays and normalize
                       const lineCoordinates = state.current.polyline
                         .getLatLngs()
-                        .map((latLng) => [latLng.lat, latLng.lng]);
-                    
-                        if (debug) console.log("Line Coordinates:", JSON.stringify(lineCoordinates));
+                        .map((latLng) => [latLng.lat, normalizeLongitude(latLng.lng)]);
+                  
+                      if (debug) console.log("Line Coordinates (Normalized):", JSON.stringify(lineCoordinates));
                       updatedValue = JSON.stringify(lineCoordinates); // Save as JSON array
                     } else {
                       if (debug) console.log("No shape created yet.");
-                    }                    
+                    }
                   
                     // Update the textarea value
                     targetElement.value = updatedValue;
                   
                     // Trigger the field's onChange handler
                     handleFieldChange(field, updatedValue);
-
+                  
                     closeMapDialog();
-                  }}
+                  }}                  
                                     
                   >Get Coordinates</button>
               </div>
