@@ -484,12 +484,32 @@ const processInitialData = (data) => {
       // Process polygon data
       state.current.points = coordinates;
       state.current.polygon = L.polygon(coordinates, { color: "red" }).addTo(mapRef.current);
+      state.current.polygon.editing.enable(); // Enable editing
       mapRef.current.fitBounds(state.current.polygon.getBounds());
+
+      // Update state on edit
+      state.current.polygon.on("edit", () => {
+        state.current.points = state.current.polygon
+          .getLatLngs()[0]
+          .map((latLng) => [latLng.lat, latLng.lng]);
+        if (debug) console.log("Polygon updated points:", state.current.points);
+      });
+
     } else if (mode === "lines" && Array.isArray(coordinates)) {
       // Process line data
       state.current.points = coordinates;
       state.current.polyline = L.polyline(coordinates, { color: "blue" }).addTo(mapRef.current);
+      state.current.polyline.editing.enable(); // Enable editing
       mapRef.current.fitBounds(state.current.polyline.getBounds());
+
+      // Update state on edit
+      state.current.polyline.on("edit", () => {
+        state.current.points = state.current.polyline
+          .getLatLngs()
+          .map((latLng) => [latLng.lat, latLng.lng]);
+        if (debug) console.log("Polyline updated points:", state.current.points);
+      });
+
     } else if (mode === "rectangle" && Array.isArray(coordinates)) {
       // Process rectangle data
       const bounds = L.latLngBounds(
@@ -497,8 +517,19 @@ const processInitialData = (data) => {
         L.latLng(coordinates[1][0], coordinates[1][1])
       );
       state.current.rectangle = L.rectangle(bounds, { color: "purple" }).addTo(mapRef.current);
+      state.current.rectangle.editing.enable(); // Enable editing
       mapRef.current.fitBounds(bounds);
-      if (debug) console.log("Rectangle drawn with bounds:", bounds.toBBoxString());
+
+      // Update state on edit
+      state.current.rectangle.on("edit", () => {
+        const updatedBounds = state.current.rectangle.getBounds();
+        state.current.points = [
+          [updatedBounds.getNorthWest().lat, updatedBounds.getNorthWest().lng],
+          [updatedBounds.getSouthEast().lat, updatedBounds.getSouthEast().lng],
+        ];
+        if (debug) console.log("Rectangle updated bounds:", state.current.points);
+      });
+
     } else if (mode === "circle" && Array.isArray(center) && typeof radius === "number") {
       // Process circle data
       const circleCenter = L.latLng(center[0], center[1]);
@@ -506,8 +537,17 @@ const processInitialData = (data) => {
         color: "purple",
         radius: radius,
       }).addTo(mapRef.current);
+      state.current.circle.editing.enable(); // Enable editing
       mapRef.current.fitBounds(state.current.circle.getBounds());
-      if (debug) console.log("Circle drawn with center:", circleCenter, "and radius:", radius);
+
+      // Update state on edit
+      state.current.circle.on("edit", () => {
+        const updatedCenter = state.current.circle.getLatLng();
+        const updatedRadius = state.current.circle.getRadius();
+        state.current.points = [{ lat: updatedCenter.lat, lng: updatedCenter.lng }, updatedRadius];
+        if (debug) console.log("Circle updated data:", state.current.points);
+      });
+
     } else {
       console.warn("Unsupported or invalid mode in initialData:", mode);
     }
@@ -515,6 +555,7 @@ const processInitialData = (data) => {
     console.warn("Invalid initialData format. Expected object with 'mode' and related data.");
   }
 };
+
   
   const closeMapDialog = () => {
     if (debug) console.log('Unload: ', (`${id}_mapper_container`));
