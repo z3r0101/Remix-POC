@@ -495,6 +495,7 @@ const processInitialData = (data) => {
         if (debug) console.log("Polygon updated points:", state.current.points);
       });
 
+      dialogMapRef.current?.querySelector('select').setAttribute('last_mode', 'autoPolygon');
     } else if (mode === "lines" && Array.isArray(coordinates)) {
       // Process line data
       state.current.points = coordinates;
@@ -509,7 +510,7 @@ const processInitialData = (data) => {
           .map((latLng) => [latLng.lat, latLng.lng]);
         if (debug) console.log("Polyline updated points:", state.current.points);
       });
-
+      dialogMapRef.current?.querySelector('select').setAttribute('last_mode', 'drawLines');
     } else if (mode === "rectangle" && Array.isArray(coordinates)) {
       // Process rectangle data
       const bounds = L.latLngBounds(
@@ -520,6 +521,12 @@ const processInitialData = (data) => {
       state.current.rectangle.editing.enable(); // Enable editing
       mapRef.current.fitBounds(bounds);
 
+      // Initialize points
+      state.current.points = [
+        [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
+        [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
+      ];
+
       // Update state on edit
       state.current.rectangle.on("edit", () => {
         const updatedBounds = state.current.rectangle.getBounds();
@@ -529,7 +536,7 @@ const processInitialData = (data) => {
         ];
         if (debug) console.log("Rectangle updated bounds:", state.current.points);
       });
-
+      dialogMapRef.current?.querySelector('select').setAttribute('last_mode', 'drawRectangle');
     } else if (mode === "circle" && Array.isArray(center) && typeof radius === "number") {
       // Process circle data
       const circleCenter = L.latLng(center[0], center[1]);
@@ -540,6 +547,9 @@ const processInitialData = (data) => {
       state.current.circle.editing.enable(); // Enable editing
       mapRef.current.fitBounds(state.current.circle.getBounds());
 
+      // Initialize points
+      state.current.points = [{ lat: center[0], lng: center[1] }, radius];
+
       // Update state on edit
       state.current.circle.on("edit", () => {
         const updatedCenter = state.current.circle.getLatLng();
@@ -547,7 +557,7 @@ const processInitialData = (data) => {
         state.current.points = [{ lat: updatedCenter.lat, lng: updatedCenter.lng }, updatedRadius];
         if (debug) console.log("Circle updated data:", state.current.points);
       });
-
+      dialogMapRef.current?.querySelector('select').setAttribute('last_mode', 'drawCircle');
     } else {
       console.warn("Unsupported or invalid mode in initialData:", mode);
     }
