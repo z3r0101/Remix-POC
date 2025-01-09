@@ -178,186 +178,132 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     mode: "moveMap",
     polygon: null,
     polyline: null,
+    circle: null,
+    square: null,
     points: [],
     wasPolygonized: false,
   });
   const initializeMap = (initialData) => {
     if (!mapRef.current && window.L) {
-      // Initialize the map
       if (debug) console.log(`${id}_mapper_modeSelect`);
-
+  
+      // Initialize the map
       mapRef.current = L.map(`${id}_mapper_container`).setView([43.833, 87.616], 2); // Urumqi center
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
       }).addTo(mapRef.current);
-
+  
       let isDragging = false;
-
-      mapRef.current.on("mousedown", (e) => {
-        isDragging = true; // Set dragging state to true
-      
-        // Update cursor to indicate dragging
+  
+      // Handle dragging states
+      mapRef.current.on("mousedown", () => {
+        isDragging = true;
         mapRef.current.getContainer().style.cursor = "grabbing";
       });
-      
-      mapRef.current.on("mouseup", (e) => {
-        isDragging = false; // Reset dragging state
-      
-        // Reset cursor based on the mode
+  
+      mapRef.current.on("mouseup", () => {
+        isDragging = false;
         mapRef.current.getContainer().style.cursor =
           state.current.mode === "moveMap" ? "grab" : "crosshair";
-      }); 
-
-      // Attach a click event to the map
+      });
+  
+      // Handle map click events
       mapRef.current.on("click", (e) => {
-
-        const latLng = e.latlng; // Get clicked coordinates
-      
-        if (state.current.mode === "autoPolygon") {
-          // Handle auto-polygon mode
-          state.current.points.push([latLng.lat, latLng.lng]);
-      
-          // Remove the previous polygon if it exists
-          if (state.current.polygon) {
-            mapRef.current.removeLayer(state.current.polygon);
-          }
-      
-          // Draw a new polygon with updated points
-          state.current.polygon = L.polygon(state.current.points, { color: "red" }).addTo(mapRef.current);
-      
-          if (debug) console.log("Polygon Points:", state.current.points);
-        } else if (state.current.mode === "drawLines") {
-          // Handle draw-lines mode
-      
-          // Clear all markers if there are no points
-          if (state.current.points.length === 0) {
-            if (state.current.startMarker) {
-              mapRef.current.removeLayer(state.current.startMarker);
-              state.current.startMarker = null;
-            }
-      
-            if (state.current.polyline) {
-              mapRef.current.removeLayer(state.current.polyline);
-              state.current.polyline = null;
-            }
-          }
-      
-          const newPoint = [latLng.lat, latLng.lng];
-      
-          if (state.current.points.length === 0) {
-            // First point - add a marker to indicate the starting point
-            state.current.startMarker = L.circleMarker(newPoint, {
-              color: "blue",
-              radius: 1, // Adjust the radius for better visibility
-            }).addTo(mapRef.current);
-          }
-      
-          let isCollision = false;
-          let isConnected = false;
-      
-          if (state.current.points.length > 1) {
-            // Check for collision with existing lines
-            for (let i = 0; i < state.current.points.length - 1; i++) {
-              if (
-                doLinesIntersect(
-                  state.current.points[i],
-                  state.current.points[i + 1],
-                  state.current.points[state.current.points.length - 1],
-                  newPoint
-                )
-              ) {
-                //isCollision = true;
-                break;
-              }
-            }
-      
-            // Check if the line connects to the starting point
-            const startPoint = state.current.points[0];
-            isConnected = isConnectedToStart(newPoint, L.latLng(startPoint[0], startPoint[1]));
-          }
-      
-          // Add the new point to the line
-          state.current.points.push(newPoint);
-      
-          // Remove the previous polyline if it exists
-          if (state.current.polyline) {
-            mapRef.current.removeLayer(state.current.polyline);
-          }
-      
-          // Draw a new polyline with updated points
-          state.current.polyline = L.polyline(state.current.points, { color: "blue" }).addTo(mapRef.current);
-      
-          if (debug) console.log("Polyline Points:", state.current.points);
-      
-          // If there is a collision or the line connects to the starting point, close the polygon
-          if (isCollision || isConnected) {
-            closePolygon();
-          }
+        const latLng = e.latlng;
+  
+        switch (state.current.mode) {
+          case "autoPolygon":
+            handlePolygonMode(latLng);
+            break;
+          case "drawLines":
+            handleLineMode(latLng);
+            break;
+          default:
+            console.warn(`Unhandled mode: ${state.current.mode}`);
         }
-      });            
-
-      if (debug) console.log(initialData);
-
-      // If initialData is provided, draw the saved shape
+      });
+  
+      if (debug) console.log("Initial Data:", initialData);
+  
+      // Process initial data for rendering shapes
       if (initialData) {
         try {
-          if (debug) console.log("Initial Data Received:", initialData);
-
-          if (Array.isArray(initialData) && Array.isArray(initialData[0])) {
-            // Assume this is a polygon
-            if (debug) console.log("Processing Polygon Data:", initialData);
-
-            // Convert to Leaflet-compatible format
-            const polygonPoints = initialData.map(([lat, lng], index) => {
-              if (typeof lat === "number" && typeof lng === "number") {
-                return { lat, lng }; // Convert to { lat, lng }
-              } else {
-                throw new Error(`Invalid coordinate format at index ${index}: ${JSON.stringify([lat, lng])}`);
-              }
-            });
-
-            // Update state and draw the polygon
-            state.current.points = polygonPoints.map(({ lat, lng }) => [lat, lng]); // Preserve array format for state
-            if (debug) console.log("Polygon Points Ready:", polygonPoints);
-            state.current.polygon = L.polygon(polygonPoints, { color: "red" }).addTo(mapRef.current);
-
-            // Adjust map view to fit the polygon
-            mapRef.current.fitBounds(state.current.polygon.getBounds());
-          } else if (Array.isArray(initialData)) {
-            // Assume this is a polyline
-            if (debug) console.log("Processing Polyline Data:", initialData);
-
-            // Convert to Leaflet-compatible format
-            const polylinePoints = initialData.map(([lat, lng], index) => {
-              if (typeof lat === "number" && typeof lng === "number") {
-                return { lat, lng }; // Convert to { lat, lng }
-              } else {
-                throw new Error(`Invalid coordinate format at index ${index}: ${JSON.stringify([lat, lng])}`);
-              }
-            });
-
-            // Update state and draw the polyline
-            state.current.points = polylinePoints.map(({ lat, lng }) => [lat, lng]); // Preserve array format for state
-            state.current.polyline = L.polyline(state.current.points, { color: "blue" }).addTo(mapRef.current);
-
-            // Adjust map view to fit the polyline
-            mapRef.current.fitBounds(state.current.polyline.getBounds());
-          } else {
-            console.warn("Invalid initialData format. Expected array of coordinates.");
-          }
+          processInitialData(initialData);
         } catch (error) {
           console.error("Error processing initialData:", error.message);
         }
       }
-
-      //Removing Ukrainian Flag
+  
+      // Remove Ukrainian Flag
       document.querySelector('.leaflet-control-attribution.leaflet-control a')?.remove();
-
+  
+      // Reset the mode select dropdown
       document.getElementById(`${id}_mapper_modeSelect`).selectedIndex = 0;
-
+  
       if (debug) console.log("Map initialized");
     }
   };
+  
+  // Helper functions for handling specific modes
+  const handlePolygonMode = (latLng) => {
+    state.current.mode = "autoPolygon";
+
+    state.current.points.push([latLng.lat, latLng.lng]);
+  
+    if (state.current.polygon) {
+      mapRef.current.removeLayer(state.current.polygon);
+    }
+  
+    state.current.polygon = L.polygon(state.current.points, { color: "red" }).addTo(mapRef.current);
+  
+    if (debug) console.log("Polygon Points:", state.current.points);
+  };
+  
+  const handleLineMode = (latLng) => {
+    state.current.mode = "drawLines";
+
+    const newPoint = [latLng.lat, latLng.lng];
+  
+    if (state.current.points.length === 0) {
+      if (state.current.startMarker) mapRef.current.removeLayer(state.current.startMarker);
+      if (state.current.polyline) mapRef.current.removeLayer(state.current.polyline);
+  
+      state.current.startMarker = L.circleMarker(newPoint, {
+        color: "blue",
+        radius: 1,
+      }).addTo(mapRef.current);
+    }
+  
+    state.current.points.push(newPoint);
+  
+    if (state.current.polyline) mapRef.current.removeLayer(state.current.polyline);
+  
+    state.current.polyline = L.polyline(state.current.points, { color: "blue" }).addTo(mapRef.current);
+  
+    if (debug) console.log("Polyline Points:", state.current.points);
+  };
+  
+  // Process initial data for drawing shapes
+  const processInitialData = (data) => {
+    if (data.mode && Array.isArray(data.coordinates)) {
+      const { mode, coordinates } = data;
+  
+      if (mode === "polygon") {
+        state.current.points = coordinates;
+        state.current.polygon = L.polygon(coordinates, { color: "red" }).addTo(mapRef.current);
+        mapRef.current.fitBounds(state.current.polygon.getBounds());
+      } else if (mode === "lines") {
+        state.current.points = coordinates;
+        state.current.polyline = L.polyline(coordinates, { color: "blue" }).addTo(mapRef.current);
+        mapRef.current.fitBounds(state.current.polyline.getBounds());
+      } else {
+        console.warn("Unsupported mode in initialData:", mode);
+      }
+    } else {
+      console.warn("Invalid initialData format. Expected object with 'mode' and 'coordinates'.");
+    }
+  };
+  
   const closeMapDialog = () => {
     if (debug) console.log('Unload: ', (`${id}_mapper_container`));
     setIsDialogMapOpen(false);
@@ -372,6 +318,8 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
       state.current.mode = "moveMap";
       state.current.polygon = null;
       state.current.polyline = null;
+      state.current.square = null;
+      state.current.circle = null;
       state.current.points = [];
       state.current.wasPolygonized = false;
     }
@@ -389,22 +337,6 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
       console.error(`Container not found for selector: ${id}_mapper .dts-form__body`);
     }
   }
-  const closePolygon = () => {
-    if (state.current.polyline) {
-      mapRef.current.removeLayer(state.current.polyline);
-    }
-    if (state.current.polygon) {
-      mapRef.current.removeLayer(state.current.polygon);
-    }
-  
-    // Complete the loop by connecting to the first point
-    state.current.points.push(state.current.points[0]);
-    state.current.polygon = L.polygon(state.current.points, { color: "red" }).addTo(mapRef.current);
-    state.current.wasPolygonized = true;
-    state.current.polyline = null;
-  
-    if (debug) console.log("Polygon closed. Points:", state.current.points);
-  };  
   const isConnectedToStart = (newPoint, startPoint) => {
     const distance = mapRef.current.distance(newPoint, startPoint); // Use Leaflet's distance method
     return distance < 10; // Close if within 10 meters
@@ -793,8 +725,14 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                 }}
               >
                 <option value="moveMap">Move Map</option>
-                <option value="autoPolygon">Auto Polygon</option>
-                <option value="drawLines">Draw Lines</option>
+                <option value="autoPolygon">Polygon</option>
+                <option value="drawLines">Lines</option>
+                {
+                  /*
+                <option value="drawSquare">Square</option>
+                <option value="drawCircle">Circle</option> 
+                  */
+                }
               </select>
               <div id={`${id}_mapper_buttons`} style={{display: "flex", gap: "10px"}}>
                   <button type="button" id={`${id}_mapper_clearCoords`} 
@@ -860,7 +798,11 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                         .map((latLng) => [latLng.lat, normalizeLongitude(latLng.lng)]);
                   
                       if (debug) console.log("Polygon Coordinates (Normalized):", JSON.stringify(polygonCoordinates));
-                      updatedValue = JSON.stringify(polygonCoordinates); // Save as JSON array
+                      //updatedValue = JSON.stringify(polygonCoordinates); // Save as JSON array
+                      updatedValue = JSON.stringify({
+                        mode: "polygon",
+                        coordinates: polygonCoordinates,
+                      }); // Save as JSON object
                     } else if (state.current.polyline) {
                       // Convert polyline LatLng objects to plain arrays and normalize
                       const lineCoordinates = state.current.polyline
@@ -868,7 +810,12 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                         .map((latLng) => [latLng.lat, normalizeLongitude(latLng.lng)]);
                   
                       if (debug) console.log("Line Coordinates (Normalized):", JSON.stringify(lineCoordinates));
-                      updatedValue = JSON.stringify(lineCoordinates); // Save as JSON array
+                      //updatedValue = JSON.stringify(lineCoordinates); // Save as JSON array
+
+                      updatedValue = JSON.stringify({
+                        mode: "lines",
+                        coordinates: lineCoordinates,
+                      }); // Save as JSON object
                     } else {
                       if (debug) console.log("No shape created yet.");
                     }
@@ -880,9 +827,8 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                     handleFieldChange(field, updatedValue);
                   
                     closeMapDialog();
-                  }}                  
-                                    
-                  >Get Coordinates</button>
+                  }}                
+                  >Save Coordinates</button>
               </div>
               </div>
               <div className="mapper-holder">
@@ -991,42 +937,53 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
                                 Open Map
                               </a>                    
                               {value &&
-                                (() => {
-                                  try {
-                                    const coordinates = JSON.parse(value); // Parse JSON array
+                              (() => {
+                                try {
+                                  const parsedValue = JSON.parse(value); // Parse JSON object
+                                  if (parsedValue && parsedValue.coordinates && parsedValue.mode) {
+                                    const { mode, coordinates } = parsedValue;
+
                                     if (Array.isArray(coordinates)) {
+                                      const title = `Shape: ${mode.toUpperCase()}`;
                                       return (
-                                        <ul 
-                                        style={{
-                                          fontSize: "1rem",
-                                          margin: "0.5rem",
-                                          padding: "1rem",
-                                          position: "relative"
-                                        }}
-                                        title="Click to open coords in array"
-                                        onClick={() => {
-                                          const newWindow = window.open();
-                                          if (newWindow) {
-                                            newWindow.document.write(
-                                              `<pre>${JSON.stringify(coordinates, null, 2)}</pre>`
-                                            );
-                                            newWindow.document.close();
-                                          }
-                                        }}
+                                        <div
+                                          style={{
+                                            fontSize: "1rem",
+                                            margin: "0.5rem",
+                                            padding: "1rem",
+                                            position: "relative",
+                                            border: "1px solid #ddd",
+                                            borderRadius: "5px",
+                                          }}
+                                          title={title}
+                                          onClick={() => {
+                                            const newWindow = window.open();
+                                            if (newWindow) {
+                                              newWindow.document.write(
+                                                `<pre>${JSON.stringify(parsedValue, null, 2)}</pre>`
+                                              );
+                                              newWindow.document.close();
+                                            }
+                                          }}
                                         >
-                                          {coordinates.map((coordinate, index) => (
-                                            <li key={index}>
-                                              Lat: {coordinate[0]}, Lng: {coordinate[1]}
-                                            </li>
-                                          ))}
-                                        </ul>
+                                          <h4>{title}</h4>
+                                          <ul>
+                                            {coordinates.map((coordinate, index) => (
+                                              <li key={index}>
+                                                Lat: {coordinate[0]}, Lng: {coordinate[1]}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
                                       );
                                     }
-                                    return <pre>{value}</pre>; // Fallback for invalid structures
-                                  } catch (err) {
-                                    console.error("Failed to parse value:", err);
-                                    return <pre>Invalid data</pre>;
                                   }
+
+                                  return <pre>{value}</pre>; // Fallback for invalid structures
+                                } catch (err) {
+                                  console.error("Failed to parse value:", err);
+                                  return <pre>Invalid data</pre>;
+                                }
                               })()}
                             </div>
                             <textarea
