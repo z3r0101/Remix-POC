@@ -77,18 +77,11 @@ const loadLeaflet = (() => {
             height: auto !important;
           }
 
-          .leaflet-edit-move {
-            width: 12px !important;
-            height: 12px !important;
-            margin-left: -6px !important; /* Half of the new width */
-            margin-top: -6px !important; /* Half of the new height */
-          }
-
-          .leaflet-edit-resize {
-            width: 12px !important;
-            height: 12px !important;
-            margin-left: -6px !important; /* Half of the new width */
-            margin-top: -6px !important; /* Half of the new height */
+          .leaflet-marker-icon {
+            width: 10px !important;
+            height: 10px !important;
+            margin-left: -5px !important; /* Half of the new width */
+            margin-top: -5px !important; /* Half of the new height */
           }
         `;
         document.head.appendChild(style);
@@ -282,6 +275,8 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   };
   
   // Helper functions for handling specific modes
+  const normalizeLongitude = (lng) => ((lng + 180) % 360 + 360) % 360 - 180;
+
   const handlePolygonMode = (latLng) => {
     state.current.mode = "autoPolygon";
   
@@ -291,16 +286,40 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
       mapRef.current.removeLayer(state.current.polygon);
     }
   
+    // Add the polygon to the map
     state.current.polygon = L.polygon(state.current.points, { color: "red" }).addTo(mapRef.current);
   
+    // Enable editing on the polygon
+    state.current.polygon.editing.enable();
+  
+    // Add event listeners to capture edits
+    state.current.polygon.on('edit', () => {
+      const updatedLatLngs = state.current.polygon.getLatLngs()[0];
+      state.current.points = updatedLatLngs.map((point) => [
+        point.lat,
+        normalizeLongitude(point.lng), // Normalize longitude
+      ]);
+      if (debug) console.log("Polygon updated points (normalized):", state.current.points);
+    });
+  
+    state.current.polygon.on('dragend', () => {
+      const updatedLatLngs = state.current.polygon.getLatLngs()[0];
+      state.current.points = updatedLatLngs.map((point) => [
+        point.lat,
+        normalizeLongitude(point.lng), // Normalize longitude
+      ]);
+      if (debug) console.log("Polygon drag ended with points (normalized):", state.current.points);
+    });
+  
     if (debug) console.log("Polygon Points:", state.current.points);
-  };
+  };  
   
   const handleLineMode = (latLng) => {
     state.current.mode = "drawLines";
   
     const newPoint = [latLng.lat, latLng.lng];
   
+    // Initialize starting marker and clear previous line
     if (state.current.points.length === 0) {
       if (state.current.startMarker) mapRef.current.removeLayer(state.current.startMarker);
       if (state.current.polyline) mapRef.current.removeLayer(state.current.polyline);
@@ -311,11 +330,38 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
       }).addTo(mapRef.current);
     }
   
+    // Add the new point to the line
     state.current.points.push(newPoint);
   
-    if (state.current.polyline) mapRef.current.removeLayer(state.current.polyline);
+    // Remove the previous polyline if it exists
+    if (state.current.polyline) {
+      mapRef.current.removeLayer(state.current.polyline);
+    }
   
+    // Add the polyline to the map
     state.current.polyline = L.polyline(state.current.points, { color: "blue" }).addTo(mapRef.current);
+  
+    // Enable editing on the polyline
+    state.current.polyline.editing.enable();
+  
+    // Add event listeners to capture edits
+    state.current.polyline.on('edit', () => {
+      const updatedLatLngs = state.current.polyline.getLatLngs();
+      state.current.points = updatedLatLngs.map((point) => [
+        point.lat,
+        normalizeLongitude(point.lng), // Normalize longitude
+      ]);
+      if (debug) console.log("Polyline updated points (normalized):", state.current.points);
+    });
+  
+    state.current.polyline.on('dragend', () => {
+      const updatedLatLngs = state.current.polyline.getLatLngs();
+      state.current.points = updatedLatLngs.map((point) => [
+        point.lat,
+        normalizeLongitude(point.lng), // Normalize longitude
+      ]);
+      if (debug) console.log("Polyline drag ended with points (normalized):", state.current.points);
+    });
   
     if (debug) console.log("Polyline Points:", state.current.points);
   };
@@ -419,8 +465,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   
     mapRef.current.on(L.Draw.Event.CREATED, onCircleCreated);
   };
-      
-  
+
   // Enable/disable dragging dynamically
   const disableDragging = () => {
     if (mapRef?.current) mapRef.current.dragging.disable();
