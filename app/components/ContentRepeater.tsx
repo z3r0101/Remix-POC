@@ -76,6 +76,20 @@ const loadLeaflet = (() => {
             width: auto !important;
             height: auto !important;
           }
+
+          .leaflet-edit-move {
+            width: 12px !important;
+            height: 12px !important;
+            margin-left: -6px !important; /* Half of the new width */
+            margin-top: -6px !important; /* Half of the new height */
+          }
+
+          .leaflet-edit-resize {
+            width: 12px !important;
+            height: 12px !important;
+            margin-left: -6px !important; /* Half of the new width */
+            margin-top: -6px !important; /* Half of the new height */
+          }
         `;
         document.head.appendChild(style);
       };
@@ -341,9 +355,17 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   
       if (debug) console.log("Rectangle Data (Bounds):", state.current.points);
   
+      // Enable editing mode for the rectangle
+      layer.editing.enable();
+  
+      // Prevent map dragging while dragging the rectangle
+      layer.on("dragstart", () => disableDragging());
+      layer.on("dragend", () => enableDragging());
+  
       // Clean up
       state.current.rectangleHandle.disable();
       mapRef.current.off(L.Draw.Event.CREATED); // Explicit cleanup
+      enableDragging(); // Re-enable dragging for the map
     };
   
     mapRef.current.on(L.Draw.Event.CREATED, onRectangleCreated);
@@ -382,13 +404,22 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   
       if (debug) console.log("Circle Data:", state.current.points);
   
+      // Enable editing mode for the circle
+      layer.editing.enable();
+  
+      // Prevent map dragging while dragging the circle
+      layer.on("dragstart", () => disableDragging());
+      layer.on("dragend", () => enableDragging());
+  
       // Clean up
       state.current.circleHandle.disable();
       mapRef.current.off(L.Draw.Event.CREATED); // Explicit cleanup
+      enableDragging(); // Re-enable dragging for the map
     };
   
     mapRef.current.on(L.Draw.Event.CREATED, onCircleCreated);
-  };  
+  };
+      
   
   // Enable/disable dragging dynamically
   const disableDragging = () => {
