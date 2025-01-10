@@ -1158,10 +1158,10 @@ const processInitialData = (data) => {
                 >
                   <option value="moveMap">Move Map</option>
                   <option value="autoPolygon">Polygon</option>
-                  <option value="drawLines">Lines</option>
+                  <option value="drawLines">Line(s)</option>
                   <option value="drawRectangle">Rectangle</option>
                   <option value="drawCircle">Circle</option>
-                  <option value="placeMarker">Marker</option>
+                  <option value="placeMarker">Marker(s)</option>
                 </select>
               <div id={`${id}_mapper_buttons`} style={{display: "flex", gap: "10px"}}>
                   <button type="button" id={`${id}_mapper_clearCoords`} 
