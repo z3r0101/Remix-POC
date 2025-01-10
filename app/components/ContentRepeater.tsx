@@ -248,6 +248,9 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
           case "drawCircle":
             //handleCircleMode(latLng);
             break;
+          case "placeMarker":
+            handleMarkerMode(latLng);
+            break;
           default:
             //console.warn(`Unhandled mode: ${state.current.mode}`);
         }
@@ -466,6 +469,47 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     mapRef.current.on(L.Draw.Event.CREATED, onCircleCreated);
   };
 
+  const handleMarkerMode = (latLng) => {
+    state.current.mode = "placeMarker";
+  
+    // Ensure state.current.marker is an array
+    state.current.marker = state.current.marker || []; // Initialize as an array if undefined
+  
+    // Define a custom icon for the marker
+    const customIcon = L.icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+      iconSize: [32, 32], // Adjust size
+      iconAnchor: [16, 32], // Anchor the bottom point of the pin
+      popupAnchor: [0, -32], // Adjust the popup anchor point
+      shadowUrl: null, // Remove shadow
+    });
+  
+    // Create and add a new marker
+    const newMarker = L.marker(latLng, {
+      icon: customIcon,
+      draggable: true,
+    }).addTo(mapRef.current);
+  
+    // Add the new marker to the array
+    state.current.marker.push(newMarker);
+  
+    // Add dragend event
+    newMarker.on("dragend", (event) => {
+      const updatedLatLng = event.target.getLatLng();
+      const markerIndex = state.current.marker.indexOf(newMarker);
+      if (markerIndex !== -1) {
+        state.current.points[markerIndex] = [updatedLatLng.lat, normalizeLongitude(updatedLatLng.lng)];
+      }
+  
+      if (debug) console.log("Marker moved to:", updatedLatLng);
+    });
+  
+    // Update points array
+    state.current.points.push([latLng.lat, normalizeLongitude(latLng.lng)]);
+  
+    if (debug) console.log("Marker added:", { lat: latLng.lat, lng: latLng.lng });
+  };
+
   // Enable/disable dragging dynamically
   const disableDragging = () => {
     if (mapRef?.current) mapRef.current.dragging.disable();
@@ -558,6 +602,40 @@ const processInitialData = (data) => {
         if (debug) console.log("Circle updated data:", state.current.points);
       });
       dialogMapRef.current?.querySelector('select').setAttribute('last_mode', 'drawCircle');
+    } else if (mode === "markers" && Array.isArray(coordinates)) {
+      // Process marker data
+      state.current.points = [];
+      state.current.marker = [];
+
+      coordinates.forEach(([lat, lng]) => {
+        const customIcon = L.icon({
+          iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Custom marker icon
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+          popupAnchor: [0, -32],
+        });
+
+        const marker = L.marker([lat, lng], { icon: customIcon, draggable: true }).addTo(mapRef.current);
+
+        state.current.marker.push(marker);
+        state.current.points.push({ lat, lng });
+
+        // Add dragend event to update state
+        marker.on("dragend", (event) => {
+          const updatedLatLng = event.target.getLatLng();
+          const markerIndex = state.current.marker.indexOf(marker);
+          if (markerIndex !== -1) {
+            state.current.points[markerIndex] = {
+              lat: updatedLatLng.lat,
+              lng: normalizeLongitude(updatedLatLng.lng),
+            };
+          }
+          if (debug) console.log("Marker updated:", state.current.points);
+        });
+      });
+
+      if (debug) console.log("Markers initialized:", state.current.points);
+      dialogMapRef.current?.querySelector('select').setAttribute('last_mode', 'placeMarker');
     } else {
       console.warn("Unsupported or invalid mode in initialData:", mode);
     }
@@ -630,6 +708,15 @@ const processInitialData = (data) => {
     if (state.current.circle) {
       mapRef.current.removeLayer(state.current.circle);
     }
+    // Remove all markers
+    if (Array.isArray(state.current.marker)) {
+      state.current.marker.forEach((marker) => {
+        mapRef.current.removeLayer(marker);
+      });
+    }
+
+    // Reset marker array
+    state.current.marker = [];
     // Remove the starting marker if it exists
     if (state.current.startMarker) {
       mapRef.current.removeLayer(state.current.startMarker);
@@ -1047,6 +1134,7 @@ const processInitialData = (data) => {
                   <option value="drawLines">Lines</option>
                   <option value="drawRectangle">Rectangle</option>
                   <option value="drawCircle">Circle</option>
+                  <option value="placeMarker">Marker</option>
                 </select>
               <div id={`${id}_mapper_buttons`} style={{display: "flex", gap: "10px"}}>
                   <button type="button" id={`${id}_mapper_clearCoords`} 
@@ -1193,6 +1281,22 @@ const processInitialData = (data) => {
                       if (debug) console.log("Rectangle Data:", JSON.stringify(rectangleData));
                   
                       updatedValue = JSON.stringify(rectangleData); // Save as JSON object
+                    } else if (state.current.marker && Array.isArray(state.current.marker)) {
+                      // Get marker data as an array of coordinates
+                      const markerCoordinates = state.current.marker.map((marker) => [
+                        marker.getLatLng().lat,
+                        normalizeLongitude(marker.getLatLng().lng),
+                      ]);
+                  
+                      const markerData = {
+                        mode: "markers",
+                        coordinates: markerCoordinates,
+                      };
+                  
+                      if (debug)
+                        console.log("Marker Data:", JSON.stringify(markerData));
+                  
+                      updatedValue = JSON.stringify(markerData); // Save as JSON object
                     } else {
                       if (debug) console.log("No shape created yet.");
                     }
