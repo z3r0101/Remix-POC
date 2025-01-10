@@ -83,6 +83,13 @@ const loadLeaflet = (() => {
             margin-left: -5px !important; /* Half of the new width */
             margin-top: -5px !important; /* Half of the new height */
           }
+
+          .custom-leaflet-marker {
+            width: 16px !important;
+            height: 16px !important;
+            margin-left: -8px !important; /* Half of width */
+            margin-top: -16px !important; /* Height for bottom alignment */
+          }
         `;
         document.head.appendChild(style);
       };
@@ -210,6 +217,15 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   const initializeMap = (initialData) => {
     if (!mapRef.current && window.L) {
       if (debug) console.log(`${id}_mapper_modeSelect`);
+
+      const getHeight = dialogMapRef.current?.querySelector('.dts-form__body')?.offsetHeight;
+      if (getHeight !== undefined) {
+        const mapContainer = document.getElementById(`${dialogMapRef.current.getAttribute('id')}_container`); //dialogMapRef.current?.querySelector('.mapper-holder .leaflet-container');
+        if (mapContainer) {
+          console.log('Map container:', getHeight)
+          mapContainer.style.height = `${getHeight}px`;
+        }
+      }
   
       // Initialize the map
       mapRef.current = L.map(`${id}_mapper_container`, { dragging: true }).setView([43.833, 87.616], 2); // Urumqi center
@@ -477,11 +493,12 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   
     // Define a custom icon for the marker
     const customIcon = L.icon({
-      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-      iconSize: [32, 32], // Adjust size
-      iconAnchor: [16, 32], // Anchor the bottom point of the pin
-      popupAnchor: [0, -32], // Adjust the popup anchor point
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Custom marker icon
+      iconSize: [16, 16],
+      iconAnchor: [8, 16],
+      popupAnchor: [0, -16],
       shadowUrl: null, // Remove shadow
+      className: "custom-leaflet-marker", // Add a custom class
     });
   
     // Create and add a new marker
@@ -610,9 +627,11 @@ const processInitialData = (data) => {
       coordinates.forEach(([lat, lng]) => {
         const customIcon = L.icon({
           iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Custom marker icon
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-          popupAnchor: [0, -32],
+          iconSize: [16, 16],
+          iconAnchor: [8, 16],
+          popupAnchor: [0, -16],
+          shadowUrl: null, // Remove shadow
+          className: "custom-leaflet-marker", // Add a custom class
         });
 
         const marker = L.marker([lat, lng], { icon: customIcon, draggable: true }).addTo(mapRef.current);
@@ -1194,6 +1213,21 @@ const processInitialData = (data) => {
                           handleCircleMode();
 
                           if (debug) console.log("Circle undone!");
+                        }
+                      } else if (currentMode === "placeMarker") {
+                        if (state.current.points.length > 0) {
+                          // Remove the last marker from the map
+                          const lastMarker = state.current.marker.pop(); // Remove the last marker
+                          if (lastMarker) {
+                            mapRef.current.removeLayer(lastMarker); // Remove the marker from the map
+                          }
+                      
+                          // Remove the corresponding coordinates from points
+                          state.current.points.pop();
+                      
+                          if (debug) console.log("Marker undone, remaining points:", state.current.points);
+                        } else {
+                          if (debug) console.log("No markers to undo!");
                         }
                       }
                     } else {

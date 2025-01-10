@@ -285,6 +285,7 @@ export default function EditContent() {
                     </div>
                     <ContentRepeater
                       id="polygonmapper"
+                      debug={true}
                       dnd_order={true}
                       base_path={BASE_PATH}
                       table_columns={[
