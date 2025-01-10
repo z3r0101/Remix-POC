@@ -692,6 +692,7 @@ const processInitialData = (data) => {
       state.current.wasPolygonized = false;
       state.current.rectangleHandle = null;
       state.current.circleHandle = null;
+      state.current.marker = [];
     }
 
     // Dynamically append a div to the target container
@@ -741,9 +742,9 @@ const processInitialData = (data) => {
         mapRef.current.removeLayer(marker);
       });
     }
-
     // Reset marker array
     state.current.marker = [];
+
     // Remove the starting marker if it exists
     if (state.current.startMarker) {
       mapRef.current.removeLayer(state.current.startMarker);
