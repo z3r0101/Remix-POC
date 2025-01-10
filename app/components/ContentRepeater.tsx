@@ -222,10 +222,12 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
       if (getHeight !== undefined) {
         const mapContainer = document.getElementById(`${dialogMapRef.current.getAttribute('id')}_container`); //dialogMapRef.current?.querySelector('.mapper-holder .leaflet-container');
         if (mapContainer) {
-          console.log('Map container:', getHeight)
+          if (debug) console.log('Map container:', getHeight)
           mapContainer.style.height = `${getHeight}px`;
         }
       }
+
+      document.getElementById(`${id}_mapper_search`).value = '';
   
       // Initialize the map
       mapRef.current = L.map(`${id}_mapper_container`, { dragging: true }).setView([43.833, 87.616], 2); // Urumqi center
