@@ -85,10 +85,10 @@ const loadLeaflet = (() => {
           }
 
           .custom-leaflet-marker {
-            width: 16px !important;
-            height: 16px !important;
-            margin-left: -8px !important; /* Half of width */
-            margin-top: -16px !important; /* Height for bottom alignment */
+            width: 20px !important;
+            height: 20px !important;
+            margin-left: -5px !important; /* Half of width */
+            margin-top: -20px !important; /* Height for bottom alignment */
           }
         `;
         document.head.appendChild(style);
@@ -494,9 +494,9 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     // Define a custom icon for the marker
     const customIcon = L.icon({
       iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Custom marker icon
-      iconSize: [16, 16],
-      iconAnchor: [8, 16],
-      popupAnchor: [0, -16],
+      iconSize: [20, 20],
+      iconAnchor: [5, 20],
+      popupAnchor: [0, -20],
       shadowUrl: null, // Remove shadow
       className: "custom-leaflet-marker", // Add a custom class
     });
@@ -627,9 +627,9 @@ const processInitialData = (data) => {
       coordinates.forEach(([lat, lng]) => {
         const customIcon = L.icon({
           iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Custom marker icon
-          iconSize: [16, 16],
-          iconAnchor: [8, 16],
-          popupAnchor: [0, -16],
+          iconSize: [20, 20],
+          iconAnchor: [5, 20],
+          popupAnchor: [0, -20],
           shadowUrl: null, // Remove shadow
           className: "custom-leaflet-marker", // Add a custom class
         });
