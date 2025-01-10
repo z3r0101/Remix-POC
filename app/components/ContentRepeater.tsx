@@ -623,6 +623,9 @@ const processInitialData = (data) => {
       // Process marker data
       state.current.points = [];
       state.current.marker = [];
+      
+      // Create bounds object to fit all markers
+      const markerBounds = L.latLngBounds();
 
       coordinates.forEach(([lat, lng]) => {
         const customIcon = L.icon({
@@ -637,21 +640,26 @@ const processInitialData = (data) => {
         const marker = L.marker([lat, lng], { icon: customIcon, draggable: true }).addTo(mapRef.current);
 
         state.current.marker.push(marker);
-        state.current.points.push({ lat, lng });
+        state.current.points.push([lat, lng]);
+
+        // Extend the bounds to include this marker
+        markerBounds.extend([lat, lng]);
 
         // Add dragend event to update state
         marker.on("dragend", (event) => {
           const updatedLatLng = event.target.getLatLng();
           const markerIndex = state.current.marker.indexOf(marker);
           if (markerIndex !== -1) {
-            state.current.points[markerIndex] = {
-              lat: updatedLatLng.lat,
-              lng: normalizeLongitude(updatedLatLng.lng),
-            };
+            state.current.points[markerIndex] = [updatedLatLng.lat, normalizeLongitude(updatedLatLng.lng)];
           }
           if (debug) console.log("Marker updated:", state.current.points);
         });
       });
+
+      // Fit map view to marker bounds
+      if (markerBounds.isValid()) {
+        mapRef.current.fitBounds(markerBounds);
+      }
 
       if (debug) console.log("Markers initialized:", state.current.points);
       dialogMapRef.current?.querySelector('select').setAttribute('last_mode', 'placeMarker');
