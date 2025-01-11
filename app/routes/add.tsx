@@ -196,7 +196,7 @@ export default function AddContent() {
                 <div className="dts-form-component mg-grid__col--offset-1">
                   <label>
                     <div className="dts-form-component__label">
-                      <span>Polygon Mapper</span>
+                      <span>Mapper</span>
                     </div>
                     <ContentRepeater
                       id="polygonmapper"
