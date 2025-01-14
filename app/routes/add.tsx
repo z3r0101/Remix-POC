@@ -169,7 +169,7 @@ export default function AddContent() {
                                 }
                               },
                             },
-                            { id: "file", caption: "File Upload", type: "file" },
+                            { id: "file", caption: "File Upload", type: "file", accept: "jpg|jpeg|gif|png|webp", note: "Image file only", download: false  }, 
                             { id: "url", caption: "Link", type: "input", placeholder: "Enter URL" },
                           ]}
                           data={(() => {
@@ -200,7 +200,6 @@ export default function AddContent() {
                     </div>
                     <ContentRepeater
                       id="polygonmapper"
-                      dnd_order={true}
                       base_path={BASE_PATH}
                       table_columns={[
                         { type: "dialog_field", dialog_field_id: "title", caption: "Title", width: "50%" },                        

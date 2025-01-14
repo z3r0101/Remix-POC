@@ -180,6 +180,8 @@ export default function EditContent() {
                       dnd_order={true}
                       base_path={BASE_PATH}
                       save_path_temp="/uploads/temp"
+                      file_viewer_temp_url="/image-temp-viewer"
+                      file_viewer_url="/image-viewer"
                       table_columns={[
                         { type: "dialog_field", dialog_field_id: "title", caption: "Title" },
                         { type: "dialog_field", dialog_field_id: "type", caption: "Type" },
@@ -253,7 +255,7 @@ export default function EditContent() {
                             }
                           },
                         },
-                        { id: "file", caption: "File Upload", type: "file" },
+                        { id: "file", caption: "File Upload", type: "file", accept: "jpg|jpeg|gif|png|webp", note: "Image file only", download: false  }, 
                         { id: "url", caption: "Link", type: "input", placeholder: "Enter URL" },
                         /*{ id: "comment", caption: "Comment", type: "textarea", placeholder: "" },*/
                       ]}
@@ -285,7 +287,6 @@ export default function EditContent() {
                     </div>
                     <ContentRepeater
                       id="polygonmapper"
-                      dnd_order={true}
                       base_path={BASE_PATH}
                       table_columns={[
                         { type: "dialog_field", dialog_field_id: "title", caption: "Title", width: "50%" },                        

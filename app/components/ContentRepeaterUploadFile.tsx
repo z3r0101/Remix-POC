@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import ContentRepeaterFileValidator from "./ContentRepeaterFileValidator";
 
 interface Item {
   file?: {
@@ -7,6 +8,8 @@ interface Item {
     content_type: string;
   };
 }
+
+const debug = false;
 
 class ContentRepeaterUploadFile {
   static delete(itemsData: string, publicPath: string = process.env.PUBLIC_PATH || "/app/public"): string {
@@ -29,7 +32,7 @@ class ContentRepeaterUploadFile {
         if (fs.existsSync(absoluteFilePath)) {
           try {
             fs.unlinkSync(absoluteFilePath); // Delete the file
-            console.log(`Deleted file: ${absoluteFilePath}`);
+            if (debug) console.log(`Deleted file: ${absoluteFilePath}`);
           } catch (error) {
             console.error(`Failed to delete file: ${absoluteFilePath}`, error);
           }
@@ -48,7 +51,7 @@ class ContentRepeaterUploadFile {
       if (files.length === 0) {
         try {
           fs.rmdirSync(directory); // Delete the empty directory
-          console.log(`Deleted empty directory: ${directory}`);
+          if (debug) console.log(`Deleted empty directory: ${directory}`);
         } catch (error) {
           console.error(`Failed to delete directory: ${directory}`, error);
         }
@@ -64,7 +67,7 @@ class ContentRepeaterUploadFile {
         if (updatedFiles.length === 0) {
           try {
             fs.rmdirSync(directory);
-            console.log(`Deleted empty directory: ${directory}`);
+            if (debug) console.log(`Deleted empty directory: ${directory}`);
           } catch (error) {
             console.error(`Failed to delete directory: ${directory}`, error);
           }
@@ -121,15 +124,25 @@ class ContentRepeaterUploadFile {
       );
   
       const originalFileName = path.basename(item.file.name);
+
+      if (!ContentRepeaterFileValidator.isValidExtension(originalFileName)) {
+        throw new Error(`Invalid file type: ${originalFileName}`);
+      }
+
       const cleanedFileName = originalFileName.replace(/^\d+_/, ""); // Remove timestamp prefix
       const destinationFilePath = path.resolve(absoluteDestinationPath, cleanedFileName);
       expectedFiles.add(cleanedFileName);
+
+      if (debug) console.log('originalFileName: ', originalFileName);
+      if (debug) console.log('cleanedFileName: ', cleanedFileName);
+      if (debug) console.log('tempFilePath: ', tempFilePath);
   
       if (fs.existsSync(tempFilePath)) {
         try {
           // Move file and update item
           fs.renameSync(tempFilePath, destinationFilePath);
           item.file.name = `/${path.relative(publicPath, destinationFilePath)}`; // Update item file path
+          delete item.file?.view;
         } catch (error) {
           console.error(
             `Failed to move file: ${tempFilePath} to ${destinationFilePath}`,
@@ -149,14 +162,14 @@ class ContentRepeaterUploadFile {
       if (!expectedFiles.has(file)) {
         try {
           fs.unlinkSync(path.join(absoluteDestinationPath, file));
-          console.log(`Deleted unreferenced file: ${file}`);
+          if (debug) console.log(`Deleted unreferenced file: ${file}`);
         } catch (error) {
           console.error(`Failed to delete unreferenced file: ${file}`, error);
         }
       }
     });
   
-    console.log("Final data items:", JSON.stringify(items, null, 2));
+    if (debug) console.log("Final data items:", JSON.stringify(items, null, 2));
     return JSON.stringify(items); // Return updated items
   }
   

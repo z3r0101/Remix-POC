@@ -14,6 +14,7 @@ interface DialogField {
   required?: boolean;
   options?: string[];
   placeholder?: string;
+  accept?: string;
   show?: boolean;
   onChange?: (
     e: React.ChangeEvent<any>,
@@ -35,6 +36,8 @@ interface ContentRepeaterProps {
   save_path_temp: string;
   api_upload_url: string;
   debug?: boolean;
+  file_viewer_temp_url?: string;
+  file_viewer_url?: string;
 }
 
 const loadLeaflet = (() => {
@@ -110,7 +113,9 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   onChange,
   save_path_temp,
   api_upload_url = "/api/content-repeater-upload",
-  debug = false
+  debug = false,
+  file_viewer_temp_url = "",
+  file_viewer_url = "",
 }) => {
   const [items, setItems] = useState<Record<string, any>>(() => {
     const initialState: Record<string, any> = {};
@@ -824,21 +829,24 @@ const processInitialData = (data) => {
     formData.append("save_path_temp", `${save_path_temp}`);
     formData.append("temp_filename", `${Date.now()}_${file.name}`);
     formData.append("filename", `${file.name}`);
-
+    formData.append("file_viewer_temp_url", `${file_viewer_temp_url}`);
+    formData.append("file_viewer_url", `${file_viewer_url}`);
+  
     if (previousHref) {
-      // Append the previous href value if available
       formData.append("temp_filename_prev", previousHref);
     }
-
+  
     const response = await fetch(`${base_path}${api_upload_url}`, {
       method: "POST",
       body: formData,
     });
-
+  
     if (!response.ok) {
-      throw new Error("File upload failed.");
+      const errorResponse = await response.json();
+      const errorMessage = errorResponse.error || "File upload failed due to an unknown error.";
+      throw new Error(errorMessage);
     }
-
+  
     return await response.json();
   };  
 
@@ -989,9 +997,8 @@ const processInitialData = (data) => {
           </a>
         </li>
 
-        {debug &&
-          (() => {
-            <li>
+        {debug && (
+          <li>
             <a
               type="button"
               className="mg-button mg-button-system"
@@ -1004,8 +1011,7 @@ const processInitialData = (data) => {
               Console Log Data
             </a>
           </li>
-          })()
-        }
+        )}
       </ul>
 
       <dialog
@@ -1397,6 +1403,7 @@ const processInitialData = (data) => {
                         <span>{field.caption}</span>
                       </div>
                       {field.type === "input" && (
+                        <>
                         <input
                           id={fieldId}
                           type="text"
@@ -1404,8 +1411,13 @@ const processInitialData = (data) => {
                           value={value}
                           onChange={(e) => handleFieldChange(field, e.target.value)}
                         />
+                        {field.note && (
+                          <div style={{fontSize: "0.8em", marginTop: "0.1rem", color: "#777"}}>{field.note}</div>
+                        )}
+                        </>
                       )}
                       {field.type === "textarea" && (
+                        <>
                         <textarea
                           id={fieldId}
                           placeholder={field.placeholder || ""}
@@ -1413,6 +1425,10 @@ const processInitialData = (data) => {
                           style={{ marginBottom: "2rem" }}
                           value={value}
                         ></textarea>
+                        {field.note && (
+                          <div style={{fontSize: "0.8em", marginTop: "0.1rem", color: "#777"}}>{field.note}</div>
+                        )}
+                        </>
                       )}
                       {field.type === "mapper" && (
                         <div>
@@ -1463,89 +1479,92 @@ const processInitialData = (data) => {
                                 Open Map
                               </a>                    
                               {value &&
-(() => {
-  try {
-    const parsedValue = JSON.parse(value); // Parse JSON object
-    if (parsedValue && parsedValue.mode) {
-      const { mode, coordinates, center, radius } = parsedValue;
+                              (() => {
+                                try {
+                                  const parsedValue = JSON.parse(value); // Parse JSON object
+                                  if (parsedValue && parsedValue.mode) {
+                                    const { mode, coordinates, center, radius } = parsedValue;
 
-      const title = `Shape: ${mode.toUpperCase()}`;
+                                    const title = `Shape: ${mode.toUpperCase()}`;
 
-      if (mode === "circle" && center && radius) {
-        // Handle circle mode
-        return (
-          <div
-            style={{
-              fontSize: "1rem",
-              margin: "0.5rem",
-              padding: "1rem",
-              position: "relative",
-              border: "1px solid #ddd",
-              borderRadius: "5px",
-            }}
-            title={title}
-            onClick={() => {
-              const newWindow = window.open();
-              if (newWindow) {
-                newWindow.document.write(
-                  `<pre>${JSON.stringify(parsedValue, null, 2)}</pre>`
-                );
-                newWindow.document.close();
-              }
-            }}
-          >
-            <h4>{title}</h4>
-            <ul>
-              <li>
-                Center: Lat {center[0]}, Lng {center[1]}
-              </li>
-              <li>Radius: {radius.toFixed(2)} meters</li>
-            </ul>
-          </div>
-        );
-      } else if (Array.isArray(coordinates)) {
-        // Handle polygons, rectangles, or lines
-        return (
-          <div
-            style={{
-              fontSize: "1rem",
-              margin: "0.5rem",
-              padding: "1rem",
-              position: "relative",
-              border: "1px solid #ddd",
-              borderRadius: "5px",
-            }}
-            title={title}
-            onClick={() => {
-              const newWindow = window.open();
-              if (newWindow) {
-                newWindow.document.write(
-                  `<pre>${JSON.stringify(parsedValue, null, 2)}</pre>`
-                );
-                newWindow.document.close();
-              }
-            }}
-          >
-            <h4>{title}</h4>
-            <ul>
-              {coordinates.map((coordinate, index) => (
-                <li key={index}>
-                  Lat: {coordinate[0]}, Lng: {coordinate[1]}
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      }
-    }
+                                    if (mode === "circle" && center && radius) {
+                                      // Handle circle mode
+                                      return (
+                                        <div
+                                          style={{
+                                            fontSize: "1rem",
+                                            margin: "0.5rem",
+                                            padding: "1rem",
+                                            position: "relative",
+                                            border: "1px solid #ddd",
+                                            borderRadius: "5px",
+                                          }}
+                                          title={title}
+                                          onClick={() => {
+                                            const newWindow = window.open();
+                                            if (newWindow) {
+                                              newWindow.document.write(
+                                                `<pre>${JSON.stringify(parsedValue, null, 2)}</pre>`
+                                              );
+                                              newWindow.document.close();
+                                            }
+                                          }}
+                                        >
+                                          <h4>{title}</h4>
+                                          <ul>
+                                            <li>
+                                              Center: Lat {center[0]}, Lng {center[1]}
+                                            </li>
+                                            <li>Radius: {radius.toFixed(2)} meters</li>
+                                          </ul>
+                                        </div>
+                                      );
+                                    } else if (Array.isArray(coordinates)) {
+                                      // Handle polygons, rectangles, or lines
+                                      return (
+                                        <div
+                                          style={{
+                                            fontSize: "1rem",
+                                            margin: "0.5rem",
+                                            padding: "1rem",
+                                            position: "relative",
+                                            border: "1px solid #ddd",
+                                            borderRadius: "5px",
+                                          }}
+                                          title={title}
+                                          onClick={() => {
+                                            const newWindow = window.open();
+                                            if (newWindow) {
+                                              newWindow.document.write(
+                                                `<pre>${JSON.stringify(parsedValue, null, 2)}</pre>`
+                                              );
+                                              newWindow.document.close();
+                                            }
+                                          }}
+                                        >
+                                          <h4>{title}</h4>
+                                          <ul>
+                                            {coordinates.map((coordinate, index) => (
+                                              <li key={index}>
+                                                Lat: {coordinate[0]}, Lng: {coordinate[1]}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      );
+                                    }
+                                  }
 
-    return <pre>{value}</pre>; // Fallback for invalid structures
-  } catch (err) {
-    console.error("Failed to parse value:", err);
-    return <pre>Invalid data</pre>;
-  }
-})()}
+                                  return <pre>{value}</pre>; // Fallback for invalid structures
+                                } catch (err) {
+                                  console.error("Failed to parse value:", err);
+                                  return <pre>Invalid data</pre>;
+                                }
+                              })()}
                             </div>
+                            {field.note && (
+                              <div style={{fontSize: "0.8em", marginTop: "0.1rem", color: "#777"}}>{field.note}</div>
+                            )}
                             <textarea
                               id={fieldId}
                               name={fieldId}
@@ -1558,6 +1577,7 @@ const processInitialData = (data) => {
                         </div>
                       )}
                       {field.type === "select" && (
+                        <>
                         <select
                           id={fieldId}
                           value={value}
@@ -1569,6 +1589,10 @@ const processInitialData = (data) => {
                             </option>
                           ))}
                         </select>
+                        {field.note && (
+                          <div style={{fontSize: "0.8em", marginTop: "0.1rem", color: "#777"}}>{field.note}</div>
+                        )}
+                        </>
                       )}
                       {field.type === "option" && (
                         <div>
@@ -1589,6 +1613,9 @@ const processInitialData = (data) => {
                               </label>
                             ))}
                           </div>
+                          {field.note && (
+                            <div style={{fontSize: "0.8em", marginTop: "0.1rem", color: "#777"}}>{field.note}</div>
+                          )}
                         </div>
                       )}
                       {field.type === "file" && (
@@ -1609,8 +1636,8 @@ const processInitialData = (data) => {
                           {formData[field.id]?.name && (
                             <a
                               id={`file-link-${field.id}`}
-                              href={`${base_path}${formData[field.id]?.name}`}
-                              target="_blank"
+                              href={`${base_path}${(formData[field.id]?.view) ? formData[field.id]?.view : ((file_viewer_url) ? `${file_viewer_url}/?name=${formData[field.id]?.name.split("/").slice(-2).join("/")}${(field.download) ? '&download=true' : ''}` : formData[field.id]?.name)}`}
+                              target={!field.download ? "_blank" : undefined}
                               rel="noopener noreferrer"
                               style={{
                                 display: "inline-block",
@@ -1629,9 +1656,22 @@ const processInitialData = (data) => {
                             id={fieldId}
                             type="file"
                             ref={fileInputRefs.current[field.id]} // Attach the correct ref
+                            accept={field.accept ? field.accept.split("|").map((ext) => `.${ext}`).join(",") : undefined}
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
+                                const extension = file.name.split(".").pop()?.toLowerCase();
+                                const allowedExtensions = field.accept?.split("|");
+                                
+                                // Client-side validation for file types
+                                if (allowedExtensions && !allowedExtensions.includes(extension)) {
+                                  //alert(`Invalid file type. Allowed types: ${allowedExtensions.join(", ")}`);
+                                  const errorDiv = dialogRef.current?.querySelector(".dts-alert.dts-alert--error");
+                                  errorDiv.style.display = "block";
+                                  errorDiv.textContent = `Invalid file type`;
+                                  return;
+                                }
+
                                 try {
                                   document.getElementById(`file-link-loading-${field.id}`).style.display = 'block';
                                   if (document.getElementById(`file-link-${field.id}`))
@@ -1651,11 +1691,34 @@ const processInitialData = (data) => {
                                       document.getElementById(`file-link-${field.id}`).style.display = 'block';
                                   }
                                 } catch (error) {
+                                  // Enhanced error handling and user notification
                                   console.error("File upload failed:", error);
+
+                                  // Display an error message to the user
+                                  const errorMessage =
+                                    error instanceof Error ? error.message : "An unknown error occurred during the file upload.";
+                                  //alert(`Error: ${errorMessage}`);
+
+                                  const errorDiv = dialogRef.current?.querySelector(".dts-alert.dts-alert--error");
+                                  errorDiv.style.display = "block";
+                                  errorDiv.textContent = `${errorMessage}`;
+
+                                  document.querySelector('.dts-alert.dts-alert--error').style.display = 'block';
+                                  document.querySelector('.dts-alert.dts-alert--error')
+
+                                  // Optionally toggle UI elements back
+                                  document.getElementById(`file-link-loading-${field.id}`)!.style.display = "none";
+                                  const fileLinkElement = document.getElementById(`file-link-${field.id}`);
+                                  if (fileLinkElement) fileLinkElement.style.display = "block";
+
+                                  document.getElementById(`${id}_file`)!.value = '';
                                 }
                               }
                             }}
                           />
+                          {field.note && (
+                            <div style={{fontSize: "0.8em", marginTop: "1rem", color: "#777"}}>{field.note}</div>
+                          )}
                         </div>
                       )}
                     </label>
