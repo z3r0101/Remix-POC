@@ -829,18 +829,26 @@ const processInitialData = (data) => {
   const adjustZoomBasedOnDistance = (map, bounds, centers) => {
     console.log(bounds);
 
-    if (centers.length === 1) {
-      // If there's only one shape, no need to zoom out; center the map on the shape
-      map.setView(centers[0], 17); // Default zoom for a single shape
-      return;
-    }
-
-    // Calculate the maximum distance between all centers
     let maxDistance = 0;
-    for (let i = 0; i < centers.length; i++) {
-      for (let j = i + 1; j < centers.length; j++) {
-        const distance = centers[i].distanceTo(centers[j]);
-        maxDistance = Math.max(maxDistance, distance);
+
+    if (centers.length === 1) {
+      // Calculate maxDistance for a single shape based on its bounds
+      const singleShapeBounds = bounds.isValid() ? bounds : null;
+
+      if (singleShapeBounds) {
+        maxDistance = singleShapeBounds.getNorthEast().distanceTo(singleShapeBounds.getSouthWest());
+      } else {
+        console.warn("No valid bounds available for the single shape.");
+        map.setView(centers[0], 14); // Default zoom for a single center if no bounds
+        return;
+      }
+    } else {
+      // Calculate the maximum distance between all centers
+      for (let i = 0; i < centers.length; i++) {
+        for (let j = i + 1; j < centers.length; j++) {
+          const distance = centers[i].distanceTo(centers[j]);
+          maxDistance = Math.max(maxDistance, distance);
+        }
       }
     }
 
@@ -849,18 +857,18 @@ const processInitialData = (data) => {
     const regionalLevelDistance = 5000000; // ~5,000km
     const countryLevelDistance = 1000000; // ~1,000km
     const cityLevelDistance = 100000; // ~100km
-    const townLevelDistance1 = 20000; // ~20km (new)
-    const townLevelDistance2 = 15000; // ~15km (new)
-    const townLevelDistance3 = 10000; // ~10km (new)
-    const townLevelDistance4 = 5000; // ~5km (new)
+    const townLevelDistance1 = 20000; // ~20km
+    const townLevelDistance2 = 15000; // ~15km
+    const townLevelDistance3 = 10000; // ~10km
+    const townLevelDistance4 = 5000; // ~5km
 
     let calculatedZoom;
 
     // Adjust zoom based on maximum distance
     if (maxDistance > globalLevelDistance) {
-      calculatedZoom = 3; // Minimum zoom for global scale
+      calculatedZoom = 2; // Minimum zoom for global scale
     } else if (maxDistance > regionalLevelDistance) {
-      calculatedZoom = 5; // Regional scale
+      calculatedZoom = 4; // Regional scale
     } else if (maxDistance > countryLevelDistance) {
       calculatedZoom = 7; // Country-level zoom
     } else if (maxDistance > cityLevelDistance) {
