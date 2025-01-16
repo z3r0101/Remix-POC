@@ -288,6 +288,7 @@ export default function EditContent() {
                     <ContentRepeater
                       id="polygonmapper"
                       base_path={BASE_PATH}
+                      mapper_preview={true}
                       table_columns={[
                         { type: "dialog_field", dialog_field_id: "title", caption: "Title", width: "50%" },                        
                         { type: "action", caption: "Action", width: "50%" },

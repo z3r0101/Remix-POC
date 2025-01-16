@@ -1,5 +1,24 @@
 import React, { useState, useRef, useEffect } from "react";
 
+//Mapper
+const glbMapperJS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+const glbMapperCSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+const glbColors = {
+  polygon: "#0074D9",
+  line: "#FF851B",
+  rectangle: "#2ECC40",
+  circle: "#FF4136",
+  marker: "#85144b"
+};
+const glbMarkerIcon = {
+  iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Replace with your marker icon if necessary
+  iconSize: [20, 20],
+  iconAnchor: [5, 20],
+  popupAnchor: [0, -20],
+  shadowUrl: null, // Remove shadow
+  className: "custom-leaflet-marker", // Add a custom class
+}
+
 interface TableColumn {
   type: "dialog_field" | "action";
   dialog_field_id?: string;
@@ -38,6 +57,7 @@ interface ContentRepeaterProps {
   debug?: boolean;
   file_viewer_temp_url?: string;
   file_viewer_url?: string;
+  mapper_preview?: boolean;
 }
 
 const loadLeaflet = (() => {
@@ -48,12 +68,12 @@ const loadLeaflet = (() => {
       // Load Leaflet CSS
       const leafletCSS = document.createElement("link");
       leafletCSS.rel = "stylesheet";
-      leafletCSS.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      leafletCSS.href = glbMapperCSS;
       document.head.appendChild(leafletCSS);
 
       // Load Leaflet JavaScript
       const leafletJS = document.createElement("script");
-      leafletJS.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      leafletJS.src = glbMapperJS;
       leafletJS.async = true;
       leafletJS.onload = () => {
         // Load Leaflet.draw CSS
@@ -116,6 +136,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   debug = false,
   file_viewer_temp_url = "",
   file_viewer_url = "",
+  mapper_preview = false,
 }) => {
   const [items, setItems] = useState<Record<string, any>>(() => {
     const initialState: Record<string, any> = {};
@@ -313,7 +334,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     }
   
     // Add the polygon to the map
-    state.current.polygon = L.polygon(state.current.points, { color: "red" }).addTo(mapRef.current);
+    state.current.polygon = L.polygon(state.current.points, { color: glbColors.polygon }).addTo(mapRef.current);
   
     // Enable editing on the polygon
     state.current.polygon.editing.enable();
@@ -365,7 +386,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     }
   
     // Add the polyline to the map
-    state.current.polyline = L.polyline(state.current.points, { color: "blue" }).addTo(mapRef.current);
+    state.current.polyline = L.polyline(state.current.points, { color: glbColors.line }).addTo(mapRef.current);
   
     // Enable editing on the polyline
     state.current.polyline.editing.enable();
@@ -401,7 +422,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     state.current.mode = "drawRectangle";
   
     state.current.rectangleHandle = new L.Draw.Rectangle(mapRef.current, {
-      shapeOptions: { color: "purple" },
+      shapeOptions: { color: glbColors.rectangle },
     });
   
     state.current.rectangleHandle.enable();
@@ -452,7 +473,7 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
     state.current.mode = "drawCircle";
   
     state.current.circleHandle = new L.Draw.Circle(mapRef.current, {
-      shapeOptions: { color: "purple" },
+      shapeOptions: { color: glbColors.circle },
     });
   
     state.current.circleHandle.enable();
@@ -500,12 +521,12 @@ export const ContentRepeater: React.FC<ContentRepeaterProps> = ({
   
     // Define a custom icon for the marker
     const customIcon = L.icon({
-      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Custom marker icon
-      iconSize: [20, 20],
-      iconAnchor: [5, 20],
-      popupAnchor: [0, -20],
-      shadowUrl: null, // Remove shadow
-      className: "custom-leaflet-marker", // Add a custom class
+      iconUrl: glbMarkerIcon.iconUrl,
+      iconSize: glbMarkerIcon.iconSize,
+      iconAnchor: glbMarkerIcon.iconAnchor,
+      popupAnchor: glbMarkerIcon.popupAnchor,
+      shadowUrl: glbMarkerIcon.shadowUrl,
+      className: glbMarkerIcon.className,
     });
   
     // Create and add a new marker
@@ -551,7 +572,7 @@ const processInitialData = (data) => {
     if (mode === "polygon" && Array.isArray(coordinates)) {
       // Process polygon data
       state.current.points = coordinates;
-      state.current.polygon = L.polygon(coordinates, { color: "red" }).addTo(mapRef.current);
+      state.current.polygon = L.polygon(coordinates, { color: glbColors.polygon }).addTo(mapRef.current);
       state.current.polygon.editing.enable(); // Enable editing
       mapRef.current.fitBounds(state.current.polygon.getBounds());
 
@@ -567,7 +588,7 @@ const processInitialData = (data) => {
     } else if (mode === "lines" && Array.isArray(coordinates)) {
       // Process line data
       state.current.points = coordinates;
-      state.current.polyline = L.polyline(coordinates, { color: "blue" }).addTo(mapRef.current);
+      state.current.polyline = L.polyline(coordinates, { color: glbColors.line }).addTo(mapRef.current);
       state.current.polyline.editing.enable(); // Enable editing
       mapRef.current.fitBounds(state.current.polyline.getBounds());
 
@@ -585,7 +606,7 @@ const processInitialData = (data) => {
         L.latLng(coordinates[0][0], coordinates[0][1]),
         L.latLng(coordinates[1][0], coordinates[1][1])
       );
-      state.current.rectangle = L.rectangle(bounds, { color: "purple" }).addTo(mapRef.current);
+      state.current.rectangle = L.rectangle(bounds, { color: glbColors.rectangle }).addTo(mapRef.current);
       state.current.rectangle.editing.enable(); // Enable editing
       mapRef.current.fitBounds(bounds);
 
@@ -636,12 +657,12 @@ const processInitialData = (data) => {
 
       coordinates.forEach(([lat, lng]) => {
         const customIcon = L.icon({
-          iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png", // Custom marker icon
-          iconSize: [20, 20],
-          iconAnchor: [5, 20],
-          popupAnchor: [0, -20],
-          shadowUrl: null, // Remove shadow
-          className: "custom-leaflet-marker", // Add a custom class
+          iconUrl: glbMarkerIcon.iconUrl,
+          iconSize: glbMarkerIcon.iconSize,
+          iconAnchor: glbMarkerIcon.iconAnchor,
+          popupAnchor: glbMarkerIcon.popupAnchor,
+          shadowUrl: glbMarkerIcon.shadowUrl,
+          className: glbMarkerIcon.className,
         });
 
         const marker = L.marker([lat, lng], { icon: customIcon, draggable: true }).addTo(mapRef.current);
@@ -677,8 +698,7 @@ const processInitialData = (data) => {
     console.warn("Invalid initialData format. Expected object with 'mode' and related data.");
   }
 };
-
-  
+ 
   const closeMapDialog = () => {
     if (debug) console.log('Unload: ', (`${id}_mapper_container`));
     setIsDialogMapOpen(false);
@@ -779,8 +799,131 @@ const processInitialData = (data) => {
   
     if (debug) console.log("Drawing state reset.");
   };
+  const handlePreviewMap = () => {
+    const newTab = window.open("", "_blank");
   
+    if (!newTab) {
+      alert("Popup blocker is preventing the map from opening.");
+      return;
+    }
+  
+    newTab.document.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <title>Map Preview</title>
+        <link rel="stylesheet" href="${glbMapperCSS}" />
+        <style>
+          #map {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 100vh;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script src="${glbMapperJS}"></script>
+        <script>
+          const adjustZoomBasedOnDistance = (map, bounds) => {
+            // Calculate diagonal distance in meters
+            const diagonalDistance = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
 
+            // Define zoom level thresholds
+            const globalLevelDistance = 5000000; // ~5000km or more
+            const regionalLevelDistance = 1000000; // ~1000km
+            const localLevelDistance = 500000; // ~500km
+
+            let calculatedZoom;
+
+            // Determine zoom level based on distance
+            if (diagonalDistance > globalLevelDistance) {
+              calculatedZoom = 3; // Minimum zoom for very far distances (world-level view)
+            } else if (diagonalDistance > regionalLevelDistance) {
+              calculatedZoom = 5; // Moderate zoom for regional distances
+            } else if (diagonalDistance > localLevelDistance) {
+              calculatedZoom = 7; // Zoom in for country-level distances
+            } else {
+              calculatedZoom = 10; // Maximum zoom for local distances
+            }
+
+            // Fit the bounds first
+            map.fitBounds(bounds, {
+              padding: [20, 20], // Add padding for better visibility
+            });
+
+            console.log(calculatedZoom)
+
+            // Set zoom level dynamically, keeping the bounds in view
+            map.setZoom(Math.min(map.getZoom(), calculatedZoom));
+          };
+
+          window.onload = () => {
+            document.getElementById('map').style.height = "${window.outerHeight-100}px";
+
+            const map = L.map("map").setView([43.833, 87.616], 2);
+  
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+              attribution: "&copy; OpenStreetMap contributors",
+            }).addTo(map);
+  
+            const items = ${JSON.stringify(Object.values(items))};
+            const boundsArray = [];
+  
+            items.forEach(item => {
+              const mapCoords = JSON.parse(item.map_coords);
+  
+              switch (mapCoords.mode) {
+                case "lines":
+                  const polyline = L.polyline(mapCoords.coordinates, { color: "${glbColors.line}" }).addTo(map);
+                  boundsArray.push(...mapCoords.coordinates);
+                  break;
+                case "polygon":
+                  const polygon = L.polygon(mapCoords.coordinates, { color: "${glbColors.polygon}" }).addTo(map);
+                  boundsArray.push(...mapCoords.coordinates);
+                  break;
+                case "rectangle":
+                  const rectangle = L.rectangle(mapCoords.coordinates, { color: "${glbColors.rectangle}" }).addTo(map);
+                  boundsArray.push(rectangle.getBounds().getSouthWest());
+                  boundsArray.push(rectangle.getBounds().getNorthEast());
+                  break;
+                case "circle":
+                  const circleCenter = L.latLng(mapCoords.center[0], mapCoords.center[1]);
+                  const circle = L.circle(circleCenter, { radius: mapCoords.radius, color: "${glbColors.circle}" }).addTo(map);
+                  const circleBounds = circle.getBounds();
+                  boundsArray.push(circleBounds.getSouthWest());
+                  boundsArray.push(circleBounds.getNorthEast());
+                  break;
+                case "markers":
+                  mapCoords.coordinates.forEach(coord => {
+                    const marker = L.marker(coord, {
+                      icon: L.icon(${JSON.stringify(glbMarkerIcon)}),
+                    }).addTo(map);
+                    boundsArray.push(coord);
+                  });
+                  break;
+                default:
+                  console.warn("Unsupported mode:", mapCoords.mode);
+              }
+            });
+  
+            if (boundsArray.length > 0) {
+              const bounds = L.latLngBounds(boundsArray);
+              adjustZoomBasedOnDistance(map, bounds);
+            } else {
+              console.warn("No valid bounds available for fitting the map.");
+            }
+          };
+        </script>
+      </body>
+      </html>
+    `);
+  
+    newTab.document.close();
+  };
+  
+  
   const handleSave = () => {
     // Find missing required fields
     const missingFields = dialog_fields
@@ -996,6 +1139,24 @@ const processInitialData = (data) => {
             Add
           </a>
         </li>
+
+        {mapper_preview && (
+          <li>
+            <a
+              type="button"
+              className="mg-button mg-button-system"
+              style={{ width: "fit-content" }}
+              onClick={(e) => {
+                e.preventDefault();
+                handlePreviewMap(glbColors);
+                //console.log("JSON Data:", Object.values(items));
+                //console.log(JSON.stringify(Object.values(items)));
+              }}
+            >
+              Preview Map
+            </a>
+          </li>
+        )}
 
         {debug && (
           <li>
