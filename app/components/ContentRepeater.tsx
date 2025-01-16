@@ -825,97 +825,143 @@ const processInitialData = (data) => {
       <body>
         <div id="map"></div>
         <script src="${glbMapperJS}"></script>
-        <script>
-          const adjustZoomBasedOnDistance = (map, bounds) => {
-            // Calculate diagonal distance in meters
-            const diagonalDistance = bounds.getNorthEast().distanceTo(bounds.getSouthWest());
+<script>
+  const adjustZoomBasedOnDistance = (map, bounds, centers) => {
+    console.log(bounds);
 
-            // Define zoom level thresholds
-            const globalLevelDistance = 5000000; // ~5000km or more
-            const regionalLevelDistance = 1000000; // ~1000km
-            const localLevelDistance = 500000; // ~500km
+    if (centers.length === 1) {
+      // If there's only one shape, no need to zoom out; center the map on the shape
+      map.setView(centers[0], 17); // Default zoom for a single shape
+      return;
+    }
 
-            let calculatedZoom;
+    // Calculate the maximum distance between all centers
+    let maxDistance = 0;
+    for (let i = 0; i < centers.length; i++) {
+      for (let j = i + 1; j < centers.length; j++) {
+        const distance = centers[i].distanceTo(centers[j]);
+        maxDistance = Math.max(maxDistance, distance);
+      }
+    }
 
-            // Determine zoom level based on distance
-            if (diagonalDistance > globalLevelDistance) {
-              calculatedZoom = 3; // Minimum zoom for very far distances (world-level view)
-            } else if (diagonalDistance > regionalLevelDistance) {
-              calculatedZoom = 5; // Moderate zoom for regional distances
-            } else if (diagonalDistance > localLevelDistance) {
-              calculatedZoom = 7; // Zoom in for country-level distances
-            } else {
-              calculatedZoom = 10; // Maximum zoom for local distances
-            }
+    // Define zoom level thresholds based on distances
+    const globalLevelDistance = 10000000; // ~10,000km
+    const regionalLevelDistance = 5000000; // ~5,000km
+    const countryLevelDistance = 1000000; // ~1,000km
+    const cityLevelDistance = 100000; // ~100km
+    const townLevelDistance1 = 20000; // ~20km (new)
+    const townLevelDistance2 = 15000; // ~15km (new)
+    const townLevelDistance3 = 10000; // ~10km (new)
+    const townLevelDistance4 = 5000; // ~5km (new)
 
-            // Fit the bounds first
-            map.fitBounds(bounds, {
-              padding: [20, 20], // Add padding for better visibility
-            });
+    let calculatedZoom;
 
-            console.log(calculatedZoom)
+    // Adjust zoom based on maximum distance
+    if (maxDistance > globalLevelDistance) {
+      calculatedZoom = 3; // Minimum zoom for global scale
+    } else if (maxDistance > regionalLevelDistance) {
+      calculatedZoom = 5; // Regional scale
+    } else if (maxDistance > countryLevelDistance) {
+      calculatedZoom = 7; // Country-level zoom
+    } else if (maxDistance > cityLevelDistance) {
+      calculatedZoom = 10; // City-level zoom
+    } else if (maxDistance > townLevelDistance1) {
+      calculatedZoom = 11; // Town-level zoom
+    } else if (maxDistance > townLevelDistance2) {
+      calculatedZoom = 12; // Town-level zoom
+    } else if (maxDistance > townLevelDistance3) {
+      calculatedZoom = 13; // Town-level zoom
+    } else if (maxDistance > townLevelDistance4) {
+      calculatedZoom = 14; // Town-level zoom
+    } else {
+      calculatedZoom = 17; // Local zoom for nearby shapes
+    }
 
-            // Set zoom level dynamically, keeping the bounds in view
-            map.setZoom(Math.min(map.getZoom(), calculatedZoom));
-          };
+    console.log("maxDistance:", maxDistance);
+    console.log("calculatedZoom:", calculatedZoom);
 
-          window.onload = () => {
-            document.getElementById('map').style.height = "${window.outerHeight-100}px";
+    // Fit bounds first with padding
+    map.fitBounds(bounds, {
+      padding: [50, 50],
+    });
 
-            const map = L.map("map").setView([43.833, 87.616], 2);
-  
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-              attribution: "&copy; OpenStreetMap contributors",
+    // Set the zoom level dynamically
+    map.setZoom(Math.min(map.getZoom(), calculatedZoom));
+  };
+
+  window.onload = () => {
+    document.getElementById("map").style.height = "${window.outerHeight - 100}px";
+
+    const map = L.map("map").setView([43.833, 87.616], 2);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    const items = ${JSON.stringify(Object.values(items))};
+    const boundsArray = [];
+    const centers = []; // Store the center points of all shapes
+
+    items.forEach((item) => {
+      const mapCoords = JSON.parse(item.map_coords);
+
+      switch (mapCoords.mode) {
+        case "lines":
+          const polyline = L.polyline(mapCoords.coordinates, {
+            color: "${glbColors.line}",
+          }).addTo(map);
+          boundsArray.push(...mapCoords.coordinates);
+          centers.push(polyline.getBounds().getCenter());
+          break;
+        case "polygon":
+          const polygon = L.polygon(mapCoords.coordinates, {
+            color: "${glbColors.polygon}",
+          }).addTo(map);
+          boundsArray.push(...mapCoords.coordinates);
+          centers.push(polygon.getBounds().getCenter());
+          break;
+        case "rectangle":
+          const rectangle = L.rectangle(mapCoords.coordinates, {
+            color: "${glbColors.rectangle}",
+          }).addTo(map);
+          boundsArray.push(rectangle.getBounds().getSouthWest());
+          boundsArray.push(rectangle.getBounds().getNorthEast());
+          centers.push(rectangle.getBounds().getCenter());
+          break;
+        case "circle":
+          const circleCenter = L.latLng(mapCoords.center[0], mapCoords.center[1]);
+          const circle = L.circle(circleCenter, {
+            radius: mapCoords.radius,
+            color: "${glbColors.circle}",
+          }).addTo(map);
+          const circleBounds = circle.getBounds();
+          boundsArray.push(circleBounds.getSouthWest());
+          boundsArray.push(circleBounds.getNorthEast());
+          centers.push(circleCenter);
+          break;
+        case "markers":
+          mapCoords.coordinates.forEach((coord) => {
+            const marker = L.marker(coord, {
+              icon: L.icon(${JSON.stringify(glbMarkerIcon)}),
             }).addTo(map);
-  
-            const items = ${JSON.stringify(Object.values(items))};
-            const boundsArray = [];
-  
-            items.forEach(item => {
-              const mapCoords = JSON.parse(item.map_coords);
-  
-              switch (mapCoords.mode) {
-                case "lines":
-                  const polyline = L.polyline(mapCoords.coordinates, { color: "${glbColors.line}" }).addTo(map);
-                  boundsArray.push(...mapCoords.coordinates);
-                  break;
-                case "polygon":
-                  const polygon = L.polygon(mapCoords.coordinates, { color: "${glbColors.polygon}" }).addTo(map);
-                  boundsArray.push(...mapCoords.coordinates);
-                  break;
-                case "rectangle":
-                  const rectangle = L.rectangle(mapCoords.coordinates, { color: "${glbColors.rectangle}" }).addTo(map);
-                  boundsArray.push(rectangle.getBounds().getSouthWest());
-                  boundsArray.push(rectangle.getBounds().getNorthEast());
-                  break;
-                case "circle":
-                  const circleCenter = L.latLng(mapCoords.center[0], mapCoords.center[1]);
-                  const circle = L.circle(circleCenter, { radius: mapCoords.radius, color: "${glbColors.circle}" }).addTo(map);
-                  const circleBounds = circle.getBounds();
-                  boundsArray.push(circleBounds.getSouthWest());
-                  boundsArray.push(circleBounds.getNorthEast());
-                  break;
-                case "markers":
-                  mapCoords.coordinates.forEach(coord => {
-                    const marker = L.marker(coord, {
-                      icon: L.icon(${JSON.stringify(glbMarkerIcon)}),
-                    }).addTo(map);
-                    boundsArray.push(coord);
-                  });
-                  break;
-                default:
-                  console.warn("Unsupported mode:", mapCoords.mode);
-              }
-            });
-  
-            if (boundsArray.length > 0) {
-              const bounds = L.latLngBounds(boundsArray);
-              adjustZoomBasedOnDistance(map, bounds);
-            } else {
-              console.warn("No valid bounds available for fitting the map.");
-            }
-          };
-        </script>
+            boundsArray.push(coord);
+            centers.push(L.latLng(coord[0], coord[1]));
+          });
+          break;
+        default:
+          console.warn("Unsupported mode:", mapCoords.mode);
+      }
+    });
+
+    if (boundsArray.length > 0) {
+      const bounds = L.latLngBounds(boundsArray);
+      adjustZoomBasedOnDistance(map, bounds, centers);
+    } else {
+      console.warn("No valid bounds available for fitting the map.");
+    }
+  };
+</script>
+
       </body>
       </html>
     `);
