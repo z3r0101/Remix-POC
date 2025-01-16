@@ -118,6 +118,8 @@ export default function AddContent() {
                           dnd_order={true}
                           base_path={BASE_PATH}
                           save_path_temp="/uploads/temp"
+                          file_viewer_temp_url="/image-temp-viewer"
+                          file_viewer_url="/image-viewer"
                           table_columns={[
                             { type: "dialog_field", dialog_field_id: "title", caption: "Title" },
                             { type: "dialog_field", dialog_field_id: "type", caption: "Type" },
@@ -201,6 +203,7 @@ export default function AddContent() {
                     <ContentRepeater
                       id="polygonmapper"
                       base_path={BASE_PATH}
+                      mapper_preview={true}
                       table_columns={[
                         { type: "dialog_field", dialog_field_id: "title", caption: "Title", width: "50%" },                        
                         { type: "action", caption: "Action", width: "50%" },
