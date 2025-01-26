@@ -7,7 +7,7 @@ import { z } from "zod"; // Validation library
 import { ZodError } from "zod";
 import { eq } from "drizzle-orm"; // For filtering
 import { ContentRepeater } from "../components/ContentRepeater";
-import { ContentRepeaterUploadFile } from "../components/ContentRepeaterUploadFile";
+import { ContentRepeaterUploadFile } from "../components/ContentRepeater/UploadFile";
 
 const BASE_PATH = process?.env.BASE_PATH || "";
 
@@ -177,6 +177,7 @@ export default function EditContent() {
                     </div>
                     <ContentRepeater
                       id="attachments"
+                      debug={true}
                       dnd_order={true}
                       base_path={BASE_PATH}
                       save_path_temp="/uploads/temp"
@@ -211,6 +212,7 @@ export default function EditContent() {
                       ]}
                       dialog_fields={[
                         { id: "title", caption: "Title", type: "input" },
+                        { id: "tag", caption: "Tags", type: "tokenfield", dataSource: [{ id: 1, name: "React" }, { id: 2, name: "Vue" }, { id: 3, name: "Angular" }, { id: 4, name: "Svelte" }, { id: 5, name: "SolidJS" } , { id: 6, name: "Remix" }] },
                         {
                           id: "type",
                           caption: "Type",
@@ -287,6 +289,7 @@ export default function EditContent() {
                     </div>
                     <ContentRepeater
                       id="polygonmapper"
+                      debug={true}
                       base_path={BASE_PATH}
                       mapper_preview={true}
                       table_columns={[

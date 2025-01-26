@@ -4,7 +4,7 @@ import {
   } from "@remix-run/node";
   import fs from "fs";
   import path from "path";
-  import ContentRepeaterFileValidator from "../components/ContentRepeaterFileValidator";
+  import ContentRepeaterFileValidator from "./FileValidator";
   
   export default class ContentRepeaterPreUploadFile {
     static async loader() {
@@ -101,7 +101,7 @@ import {
         return new Response(
           JSON.stringify({
             name: `${savePathTemp}/${tempFilename}`, 
-            view: `${fileViewerTempUrl}/?name=${tempFilename}`,
+            view: (fileViewerTempUrl) ? `${fileViewerTempUrl}/?name=${tempFilename}` : `${savePathTemp}/${tempFilename}`,
             content_type: uploadedFile.type,
           }),
           { status: 200, headers: { "Content-Type": "application/json" } }

@@ -3,7 +3,7 @@ import { useLoaderData, useNavigate, Form } from "@remix-run/react";
 import { db } from "../database/db.server";
 import { Content } from "../database/schema";
 import { eq } from "drizzle-orm";
-import { ContentRepeaterUploadFile } from "../components/ContentRepeaterUploadFile";
+import { ContentRepeaterUploadFile } from "../components/ContentRepeater/UploadFile";
 
 // Loader to fetch the specific content item
 export const loader: LoaderFunction = async ({ params }) => {

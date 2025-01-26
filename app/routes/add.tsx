@@ -7,7 +7,7 @@ import { z } from "zod"; // Validation library
 import { ZodError } from "zod";
 import { eq } from "drizzle-orm"; // For filtering
 import { ContentRepeater } from "../components/ContentRepeater";
-import { ContentRepeaterUploadFile } from "../components/ContentRepeaterUploadFile";
+import { ContentRepeaterUploadFile } from "../components/ContentRepeater/UploadFile";
 
 const BASE_PATH = process?.env.BASE_PATH || "";
 
@@ -127,6 +127,7 @@ export default function AddContent() {
                           ]}
                           dialog_fields={[
                             { id: "title", caption: "Title", type: "input" },
+                            { id: "tag", caption: "Tags", type: "tokenfield"},
                             {
                               id: "type",
                               caption: "Type",
